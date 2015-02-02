@@ -1,5 +1,6 @@
 from functools import wraps
 import collections
+from contextlib import contextmanager
 import greenlet
 
 from .util import as_context, MISSING
@@ -64,44 +65,56 @@ class ListContext(list):
         result.extend(self)
         return result
 
-
-class ContextGreenlet(greenlet.greenlet):
-
-    def __init__(self, run, ctx):
-        super().__init__(run)
-        self._context = ctx
-
-    @property
-    def context(self):
-        if self._context:
-            return self._context
-        g = self
+    @classmethod
+    def evaluate(cls):
+        g = greenlet.getcurrent()
         new = ListContext()
-        while not g._context:
-            obj = g._context.__instance__
+        while not g.context:
+            obj = g.context.__instance__
             if obj is not None:
                 new.append(obj)
             g = g.parent
-            if not hasattr(g, '_context'):
-                self._context = new + self._context
+            if not hasattr(g, 'context'):
                 break
         else:
-            self._context = new + g._context
-        self._context._set_prepared()
-        return self._context
+            new = new + g.context
+        new._set_prepared()
+        return new
 
-    @context.setter
-    def context(self, value):
-        self._context = value
+###########
 
-    @classmethod
-    def wrap(cls, func):
-        ctx = ListContext()
+def get_from_context(name):
+    context = greenlet.getcurrent().context
+    # AttributeError ?
+    if not context:
+        context = greenlet.getcurrent().context = ListContext.evaluate()
+    value = context(name)
+    if value is not MISSING:
+        return value
+    raise AttributeError(name)
 
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            g = cls(func, ctx)
-            return g.switch(*args, **kwargs)
+@contextmanager
+def context(ctx):
+    if isinstance(ctx, type) or not callable(ctx): # FIXME ?
+        ctx = as_context(ctx)
+    g_current = greenlet.getcurrent()
+    old_ctx = getattr(g_current, 'context', MISSING)
+    g_current.context = ctx
+    yield
+    if old_ctx is MISSING:
+        del g_current.context
+    else:
+        g_current.context = old_ctx
 
-        ctx._wrapped_func = wrapper
-        return ctx
+
+def in_greenlet(func):
+    ctx = ListContext()
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        g = greenlet.greenlet(func)
+        g.context = ctx
+        return g.switch(*args, **kwargs)
+
+    ctx._wrapped_func = wrapper
+    return ctx
