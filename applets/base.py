@@ -30,6 +30,10 @@ class ListContext(list):
         #
         return '__instance__' not in self.__dict__
 
+    def _set_prepared(self):
+        if '__instance__' in self.__dict__:
+            del self.__instance__
+
     def __get__(self, instance, owner):
         if instance:
             self.__instance__ = instance
@@ -41,9 +45,9 @@ class ListContext(list):
         for obj in self:
             if not callable(obj):
                 obj = as_context(obj)
-                value = obj(name)
-                if value is not MISSING:
-                    return value
+            value = obj(name)
+            if value is not MISSING:
+                return value
         return MISSING
 
     def __add__(self, other):
@@ -63,39 +67,32 @@ class ListContext(list):
 
 class ContextGreenlet(greenlet.greenlet):
 
-    # _context = None
-    # __object__ = None
-
     def __init__(self, run, ctx):
         super().__init__(run)
         self._context = ctx
-
-    # def __get__(self, instance, owner):
-    #     self.__object__ = instance
-    #     return self._run.__get__(instance)
-
-    # def __call__(self, *args, **kwargs):
-    #     return self.switch(*args, **kwargs)
 
     @property
     def context(self):
         if self._context:
             return self._context
         g = self
-        new = []
-        while isinstance(g, ContextGreenlet) and not g._context:
+        new = ListContext()
+        while not g._context:
             obj = g._context.__instance__
             if obj is not None:
                 new.append(obj)
             g = g.parent
-        self._context = new + (getattr(g, '_context', None) or self._context)
-        del self._context.__instance__
+            if not hasattr(g, '_context'):
+                self._context = new + self._context
+                break
+        else:
+            self._context = new + g._context
+        self._context._set_prepared()
         return self._context
 
     @context.setter
-    def context(self, value): # TODO
+    def context(self, value):
         self._context = value
-        # prepared = True
 
     @classmethod
     def wrap(cls, func):
@@ -108,40 +105,3 @@ class ContextGreenlet(greenlet.greenlet):
 
         ctx._wrapped_func = wrapper
         return ctx
-
-    # @classmethod
-    # def new(cls):
-    #     def decorate(f):
-    #         glet = cls(f)
-    #         @wraps(f)
-    #         def wrapper(*args, **kwargs):
-    #             glet.switch()
-
-    #     return decorate
-
-
-# class GreenletContext(ListContext):
-
-#     def __init__(self, ):
-#         self._objects = 1
-
-#     def __get__(self, instance, owner):
-#         self._greenlet = greenlet(self.instance.run)
-
-#     @classmethod
-#     def wrap(cls):
-#         1
-
-
-####
-
-# NewContext = GreenletContext
-
-
-# class A:
-
-#     # ctx = GreenletContext.new() # lazy
-
-#     @ContextGreenlet
-#     def run(self):
-#         1
