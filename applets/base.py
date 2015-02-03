@@ -17,30 +17,7 @@ Context is an object you can get attributes from by calling it:
     >>> context('some_attr')
 '''
 
-
 class ListContext(list):
-
-    _wrapped_func = None
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.__instance__ = None
-
-    def __bool__(self):
-        # whether context is prepared
-        #
-        return '__instance__' not in self.__dict__
-
-    def _set_prepared(self):
-        if '__instance__' in self.__dict__:
-            del self.__instance__
-
-    def __get__(self, instance, owner):
-        if instance:
-            self.__instance__ = instance
-        if self._wrapped_func:
-            return self._wrapped_func.__get__(instance)
-        return self
 
     def __call__(self, name):
         for obj in self:
@@ -65,29 +42,11 @@ class ListContext(list):
         result.extend(self)
         return result
 
-    @classmethod
-    def evaluate(cls):
-        g = greenlet.getcurrent()
-        new = ListContext()
-        while not g.context:
-            obj = g.context.__instance__
-            if obj is not None:
-                new.append(obj)
-            g = g.parent
-            if not hasattr(g, 'context'):
-                break
-        else:
-            new = new + g.context
-        new._set_prepared()
-        return new
 
 ###########
 
 def get_from_context(name):
     context = greenlet.getcurrent().context
-    # AttributeError ?
-    if not context:
-        context = greenlet.getcurrent().context = ListContext.evaluate()
     value = context(name)
     if value is not MISSING:
         return value
@@ -107,14 +66,59 @@ def context(ctx):
         g_current.context = old_ctx
 
 
-def in_greenlet(func):
-    ctx = ListContext()
+class GreenletWrapper:
+    '''A wrapper for methods.'''
 
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        g = greenlet.greenlet(func)
-        g.context = ctx
-        return g.switch(*args, **kwargs)
+    __self__ = None
 
-    ctx._wrapped_func = wrapper
-    return ctx
+    def __init__(self, func):
+        self.__func__ = func
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            g = MethodGreenlet(self)
+            g.get_context()
+            return g.switch(*args, **kwargs)
+
+        self._wrapper_func = wrapper
+
+    @property
+    def raw(self):
+        return self.__func__.__get__(self.__self__)
+
+    def __get__(self, instance, owner):
+        if instance:
+            self.__self__ = instance
+        return self
+
+    def __call__(self, *args, **kwargs):
+        method = self._wrapper_func.__get__(self.__self__)
+        return method(*args, **kwargs)
+
+
+class MethodGreenlet(greenlet.greenlet):
+
+    def __init__(self, method):
+        '''method is a `GreenletWrapper` instance
+        '''
+        self._method = method
+        super().__init__(method.__func__)
+
+    @property
+    def __instance__(self):
+        return self._method.__self__
+
+    def get_context(self):
+        if hasattr(self, 'context'):
+            return self.context
+        g = self
+        new = ListContext()
+        while g is not None:
+            if hasattr(g, 'context'):
+                new = new + g.context
+                break
+            if getattr(g, '__instance__', None) is not None:
+                new.append(g.__instance__)
+            g = g.parent
+        self.context = new
+        return new

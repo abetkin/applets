@@ -1,19 +1,19 @@
 # coding: utf-8
-from applets.base import in_greenlet
+from applets.base import GreenletWrapper
 from applets import get_from_context, context
 from applets.util import case
 
 class A:
     a = 1
 
-    @in_greenlet
+    @GreenletWrapper
     def run(self):
         return B().run()
 
 
 class B:
 
-    @in_greenlet
+    @GreenletWrapper
     def run(self):
         return get_from_context('a')
 
