@@ -5,3 +5,7 @@ it = get_iter()
 it.wait(Klass.method) <- s.m.
 
 ####
+
+def some_method(self):
+    it = get_iterator(super().some_method)
+    it.wait(Klass)

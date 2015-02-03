@@ -67,13 +67,14 @@ def context(ctx):
 
 
 class GreenletWrapper:
-    '''A wrapper for methods.'''
+    '''Wrapper for methods and functions.'''
 
     __self__ = None
 
     def __init__(self, func):
         self.__func__ = func
 
+        # why a func ?
         @wraps(func)
         def wrapper(*args, **kwargs):
             g = MethodGreenlet(self)
@@ -81,6 +82,8 @@ class GreenletWrapper:
             return g.switch(*args, **kwargs)
 
         self._wrapper_func = wrapper
+
+    def get_wrapper():1
 
     @property
     def raw(self):
@@ -95,8 +98,20 @@ class GreenletWrapper:
         method = self._wrapper_func.__get__(self.__self__)
         return method(*args, **kwargs)
 
+    def __call__(self, *args, **kwargs):
+        return self.wait(None, *args, **kwargs)
+
+    def wait(self, func, *args, **kwargs):
+        g = MethodGreenlet(self)
+        g.get_context()
+        return g.switch(*args, **kwargs)
+
+
 
 class MethodGreenlet(greenlet.greenlet):
+
+    stopped = None # where to return back
+    stop_at = None
 
     def __init__(self, method):
         '''method is a `GreenletWrapper` instance
@@ -122,3 +137,22 @@ class MethodGreenlet(greenlet.greenlet):
             g = g.parent
         self.context = new
         return new
+
+    # def wait(self, func):
+    #     1
+
+    def _should_stop(self):
+        g = self
+        while g is not None:
+            1
+
+    def run(self, *args, **kwargs):
+        should_stop = self.should_stop()
+        if should_stop == 'before':
+            'stop'
+        result = super().run(*args, **kwargs)
+        if should_stop == 'after':
+            g = self.get_target_g()
+            g.switch(result)
+        else:
+            return result
