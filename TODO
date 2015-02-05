@@ -1,17 +1,22 @@
 function based views
 
-it = get_iter()
-
-it.wait(Klass.method) <- s.m.
-
-####
-
-def some_method(self):
-    super().some_method(stop_before=f)
-    it.wait(Klass)
-
-
-with stop_before(B.walk):
-    1
-
 # bug : repeating elements in ctx
+
+#####
+
+tests
+
+MethodGreenlet.run: what to be switch back to parent & what to be able to override (only result)
+
+merge args & kwargs into ordered dict using Signature
+
+django examples
+
+
+how much breakpoints ? 1
+
+breakpoints = StopPoint instances, not just functions <stack>
+
+
+__________
+debugger: fix frame navigation

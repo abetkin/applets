@@ -1,6 +1,6 @@
 from applets.util import case
 import greenlet
-from applets.base import GreenletWrapper, stop_before
+from applets.base import GreenletWrapper, stop_before, stop_after
 from applets import get_from_context, context
 
 class A:
@@ -21,11 +21,12 @@ class C(A):
 
     @GreenletWrapper
     def run(self):
-        with stop_before(B.walk) as stopped:
-            res = super().run()
-            return stopped.resume(5)
-
+        with stop_after(A.run) as A_run:
+            with stop_before(B.walk) as stopped:
+                super().run()
+                res = stopped.resume(5)
+            return A_run.resume(res - 4)
 
 
 o = C()
-case.assertEqual(o.run(), 6)
+case.assertEqual(o.run(), 2)
