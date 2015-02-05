@@ -3,7 +3,7 @@ import collections
 from contextlib import contextmanager, ContextDecorator
 import greenlet
 
-from .util import as_context, MISSING
+from .util import as_context, MISSING, ArgumentsDict
 
 
 class Applet:
@@ -144,7 +144,7 @@ class MethodGreenlet(greenlet.greenlet):
         back = MISSING
         waiting = self._get_waiting_greenlet(stop_before, self.__func__)
         if waiting:
-            forth = waiting.transform(*args, **kwargs)
+            forth = waiting.transform(self.__func__, *args, **kwargs)
             back = waiting.g_current.switch(forth)
         if back is MISSING:
             result = self.__func__(*args, **kwargs)
@@ -153,7 +153,8 @@ class MethodGreenlet(greenlet.greenlet):
 
         waiting = self._get_waiting_greenlet(stop_after, self.__func__)
         if waiting:
-            forth = waiting.transform(result, *args, **kwargs)
+            forth = waiting.transform(self.__func__, *args, _result_=result,
+                                      **kwargs)
             back = waiting.g_current.switch(forth)
             if back is not MISSING:
                 result = back
@@ -164,19 +165,18 @@ class StopPoint(ContextDecorator):
 
     g_stopped = None
 
-    def __init__(self, where, kill=True):
-        self.func = where
-        self.kill_on_exit = kill
+    def __init__(self, stop_func):
+        self.func = stop_func
         self.g_current = greenlet.getcurrent()
 
     def resume(self, result=MISSING): # TODO
         self._clear()
         return self.g_stopped.switch(result)
 
-    def transform(*args, **kwargs):
+    def transform(self, func, *args, **kwargs):
         '''Transform the value that is switched from the stopped greenlet.
         '''
-        return args, kwargs
+        return ArgumentsDict(func, *args, **kwargs)
 
     def __enter__(self):
         stop_points = self.g_current.__dict__.setdefault('stop_points', [])
@@ -185,10 +185,8 @@ class StopPoint(ContextDecorator):
 
     def __exit__(self, *exc):
         self._clear()
-        if self.kill_on_exit:
-            self._kill_all()
 
-    def _kill_all(self):
+    def kill(self):
         g = self.g_stopped
         if g is None:
             return
@@ -208,14 +206,11 @@ class StopPoint(ContextDecorator):
         if self.__class__ != type(other):
             if isinstance(other, tuple):
                 return other == (self.__class__, self.func)
-        return self.func == other.func
+        return self.func == getattr(other, 'func', MISSING)
 
 
 class stop_before(StopPoint):
-
-    def transform(self, instance, *args, **kwargs):
-        return instance, kwargs
-
+    pass
 
 class stop_after(StopPoint):
 
@@ -225,7 +220,8 @@ class stop_after(StopPoint):
         self.include_arguments = args
         super().__init__(*_args, **_kwargs)
 
-    def transform(self, result, instance, *args, **kwargs):
+    def transform(self, func, *args, _result_=MISSING, **kwargs):
         if not self.include_arguments:
-            return result
-        return result, instance, kwargs
+            return _result_
+        arguments = super().transform(func, *args, **kwargs)
+        return _result_, arguments

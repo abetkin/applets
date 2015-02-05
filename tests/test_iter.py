@@ -23,7 +23,8 @@ class C(A):
     def run(self):
         with stop_after(A.run) as A_run:
             with stop_before(B.walk) as stopped:
-                super().run()
+                b, = super().run()
+                print (b)
                 res = stopped.resume(5)
             return A_run.resume(res - 4)
 
