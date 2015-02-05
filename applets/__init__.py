@@ -1,3 +1,3 @@
 import greenlet
 
-from .base import get_from_context, context
+from .base import from_context, context

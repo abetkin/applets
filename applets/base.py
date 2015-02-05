@@ -45,7 +45,7 @@ class ListContext(list):
 
 ###########
 
-def get_from_context(name):
+def from_context(name):
     context = greenlet.getcurrent().context
     value = context(name)
     if value is not MISSING:

@@ -1,7 +1,7 @@
 from applets.util import case
 import greenlet
 from applets.base import GreenletWrapper, stop_before, stop_after
-from applets import get_from_context, context
+from applets import from_context, context
 
 class A:
     x = 3
@@ -14,7 +14,7 @@ class B:
 
     @GreenletWrapper
     def walk(self):
-        return get_from_context('x')
+        return from_context('x')
 
 
 class C(A):

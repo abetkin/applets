@@ -1,6 +1,6 @@
 # coding: utf-8
 from applets.base import GreenletWrapper
-from applets import get_from_context, context
+from applets import from_context, context
 from applets.util import case
 
 class A:
@@ -15,7 +15,7 @@ class B:
 
     @GreenletWrapper
     def run(self):
-        return get_from_context('a')
+        return from_context('a')
 
 
 o = A()

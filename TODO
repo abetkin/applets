@@ -6,16 +6,7 @@ function based views
 
 tests
 
-MethodGreenlet.run: what to be switch back to parent & what to be able to override (only result)
-
-merge args & kwargs into ordered dict using Signature
-
 django examples
-
-
-how much breakpoints ? 1
-
-breakpoints = StopPoint instances, not just functions <stack>
 
 
 __________
