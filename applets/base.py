@@ -3,7 +3,7 @@ import collections
 from contextlib import contextmanager, ContextDecorator
 import greenlet
 
-from .util import as_context, MISSING, ArgumentsDict
+from .util import as_context, MISSING, BoundArguments
 
 
 class Applet:
@@ -176,7 +176,7 @@ class StopPoint(ContextDecorator):
     def transform(self, func, *args, **kwargs):
         '''Transform the value that is switched from the stopped greenlet.
         '''
-        return ArgumentsDict(func, *args, **kwargs)
+        return BoundArguments(func, *args, **kwargs)
 
     def __enter__(self):
         stop_points = self.g_current.__dict__.setdefault('stop_points', [])
