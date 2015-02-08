@@ -28,8 +28,6 @@ class BoundArguments:
     '''
 
     def __init__(self, function, *args, **kwargs):
-        self._args = args
-        self._kwargs = kwargs
         self.signature = inspect.signature(function)
         self.bound_args = self.signature.bind(*args, **kwargs).arguments
 
