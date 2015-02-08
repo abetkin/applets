@@ -107,8 +107,12 @@ class MethodGreenlet(greenlet.greenlet):
             return self._stop_points[-1]
 
     @stop_point.setter
-    def stop_point(self, value):
-        self.__dict__.setdefault('_stop_points', []).append(value)
+    def stop_point(self, value, append=True):
+        stop_points = self.__dict__.setdefault('_stop_points', [])
+        if append:
+            stop_points.append(value)
+        else:
+            stop_points.insert(0, value)
         self.__dict__.setdefault('all_stop_points', {})[value] = value
 
     @stop_point.deleter

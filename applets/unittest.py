@@ -1,5 +1,6 @@
 import unittest
-from applets.base import  MISSING, StopPoint, stop_after, stop_before
+from applets.base import  MISSING, StopPoint, stop_after, stop_before, \
+        MethodGreenlet
 
 
 class StopPointSubtest(StopPoint):
@@ -9,7 +10,7 @@ class StopPointSubtest(StopPoint):
         super().__init__(func)
         self.subtest_args = subtest_args
         self.subtest_kwargs = subtest_kwargs
-        self.__enter__()
+        MethodGreenlet.stop_point.fset(self.g_current, self, append=False)
 
     def __call__(self, test_func):
         # TODO wrap

@@ -23,15 +23,13 @@ class T(TestCase):
 
     def test(self):
 
-        # TODO reverse order
+        @self.stop_before(B.walk, 'walking')
+        def f(obj):
+            self.assertFalse(obj.__b__)
 
         @self.stop_after(A.run, 'running A')
         def f(a, _result_):
             self.assertNotEqual(_result_, 4)
-
-        @self.stop_before(B.walk, 'walking')
-        def f(obj):
-            self.assertFalse(obj.__b__)
 
         o = A()
         ss = o.run()
