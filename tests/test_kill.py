@@ -21,27 +21,16 @@ class C(A):
 
     @GreenletWrapper
     def run(self):
-        with stop_after(A.run) as A_run:
+        with stop_after(A.run):
             with stop_before(B.walk) as stopped:
                 b, = super().run()
-                stopped.resume(5)
-        return A_run.resumed
+                stopped.kill()
+        return b
 
 
 o = C()
 res = o.run()
-case.assertEqual(res, 6)
+case.assertIsInstance(res, B)
 
 
-class D(A):
-
-    @GreenletWrapper
-    def run(self):
-        with stop_after(A.run) as sce:
-            with stop_after(B.walk):
-                super().run()
-        return sce.resumed
-
-o = D()
-res = o.run()
-case.assertEqual(res, 4)
+# TODO check that stop_points are parent greenlets

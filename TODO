@@ -8,9 +8,8 @@ tests
 
 django examples
 
-- testing ex
-- stop_p lookup optimization: share a dict with bp
-
-
 __________
 debugger: fix frame navigation
+
+
+# global current point, resume

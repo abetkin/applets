@@ -99,25 +99,10 @@ class MethodGreenlet(greenlet.greenlet):
         super().__init__(method.__func__)
         self._method = method
         # all_stop_points attribute is for optimization purposes
-        self.all_stop_points = getattr(self.parent, 'all_stop_points', {})
-
-    @property
-    def stop_point(self):
-        if getattr(self, '_stop_points', None):
-            return self._stop_points[-1]
-
-    @stop_point.setter
-    def stop_point(self, value, append=True):
-        stop_points = self.__dict__.setdefault('_stop_points', [])
-        if append:
-            stop_points.append(value)
-        else:
-            stop_points.insert(0, value)
-        self.__dict__.setdefault('all_stop_points', {})[value] = value
-
-    @stop_point.deleter
-    def stop_point(self):
-        del self._stop_points[-1]
+        self.all_stop_points = dict(
+                (p, p) for p in getattr(self.parent, 'stop_points', ()))
+        self.all_stop_points.update(
+                getattr(self.parent, 'all_stop_points', ()))
 
     @property
     def __instance__(self):
@@ -146,22 +131,17 @@ class MethodGreenlet(greenlet.greenlet):
         return 'MethodGreenlet: %s' % self.__instance__.__class__.__name__ \
                 if self.__instance__ is not None else '-'
 
-    # TODO probably move listening logic out
     def run(self, *args, **kwargs):
         result = MISSING
-        stop_point = (stop_before, self.__func__)
-        stop_point = self.all_stop_points.get(stop_point)
-        if stop_point and stop_point == \
-                MethodGreenlet.stop_point.fget(stop_point.g_current):
+        stop_point = self.all_stop_points.get((stop_before, self.__func__))
+        if stop_point and stop_point.is_active():
             stop_point.g_stopped = self
             result = stop_point._switch(*args, **kwargs)
         if result is MISSING:
             result = self.__func__(*args, **kwargs)
 
-        stop_point = (stop_after, self.__func__)
-        stop_point = self.all_stop_points.get(stop_point)
-        if stop_point and stop_point == \
-                MethodGreenlet.stop_point.fget(stop_point.g_current):
+        stop_point = self.all_stop_points.get((stop_after, self.__func__))
+        if stop_point and stop_point.is_active():
             stop_point.g_stopped = self
             switched = stop_point._switch(*args, _result_=result, **kwargs)
             if switched is not MISSING:
@@ -171,15 +151,32 @@ class MethodGreenlet(greenlet.greenlet):
 
 class StopPoint(ContextDecorator):
 
+    resumed = MISSING
     g_stopped = None
+
+    @property
+    def stop_points(self):
+        return self.g_current.__dict__.setdefault('stop_points', [])
+
+    def activate(self):
+        self.stop_points.append(self)
+
+    def is_active(self):
+        if self.stop_points:
+            return self.stop_points[-1] == self
 
     def __init__(self, stop_func):
         self.func = stop_func
         self.g_current = greenlet.getcurrent()
+        self.activate()
 
     def resume(self, result=MISSING):
-        self._clear()
-        return self.g_stopped.switch(result)
+        if self.resumed is not MISSING:
+            raise Exception('already resumed')
+        self.stop_points.remove(self)
+        if self.g_stopped:
+            self.resumed = self.g_stopped.switch(result)
+            return self.resumed
 
     def _switch(self, *args, _result_=MISSING, **kwargs):
         self._args = args
@@ -192,28 +189,26 @@ class StopPoint(ContextDecorator):
         return self.g_current.switch(arguments)
 
     def __enter__(self):
-        MethodGreenlet.stop_point.fset(self.g_current, self)
         return self
 
     def __exit__(self, *exc):
         if exc[0]:
             raise exc[0].with_traceback(exc[1], exc[2])
-        self._clear()
-
-    def _clear(self):
-        if MethodGreenlet.stop_point.fget(self.g_current) == self:
-            MethodGreenlet.stop_point.fdel(self.g_current)
+        if self.resumed is MISSING:
+            self.resume()
 
     def get_type(self):
         return self.__class__
 
     def kill(self):
-        g = self.g_stopped
-        if g is None:
-            return
-        while g != self.g_current:
-            if g: g.throw()
-            g = g.parent
+
+        def to_kill(g=self.g_stopped):
+            while g is not None and g != self.g_current:
+                yield g
+                g = g.parent
+        for g in reversed(list(to_kill())):
+            g.throw()
+        # TODO check that stop_points are parent greenlets
 
     def __hash__(self):
         return hash((self.get_type(), self.func))

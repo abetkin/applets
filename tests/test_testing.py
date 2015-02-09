@@ -1,6 +1,6 @@
 from applets.base import GreenletWrapper
 from applets import from_context
-from applets.testing import TestCase, StopAfterSubTest, StopBeforeSubTest
+from applets.testing import TestCase, StopAfter, StopBefore
 # from applets.util import case
 
 class A:
@@ -35,12 +35,12 @@ class B:
 #         o = A()
 #         ss = o.run()
 
-@StopBeforeSubTest(B.walk, 'walking')
+@StopBefore(B.walk, 'walking')
 def f(case, obj):
     case.assertFalse(obj.__b__)
 
-@StopAfterSubTest(A.run, 'running A')
-def f(case, a, _result_):
+@StopAfter(A.run, 'running A')
+def g(case, a, _result_):
     case.assertNotEqual(_result_, 4)
 
 o = A()
