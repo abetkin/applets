@@ -136,14 +136,14 @@ class MethodGreenlet(greenlet.greenlet):
         stop_point = self.all_stop_points.get((stop_before, self.__func__))
         if stop_point and stop_point.is_active():
             stop_point.g_stopped = self
-            result = stop_point._switch(*args, **kwargs)
+            result = stop_point.switch(*args, **kwargs)
         if result is MISSING:
             result = self.__func__(*args, **kwargs)
 
         stop_point = self.all_stop_points.get((stop_after, self.__func__))
         if stop_point and stop_point.is_active():
             stop_point.g_stopped = self
-            switched = stop_point._switch(*args, _result_=result, **kwargs)
+            switched = stop_point.switch(*args, _result_=result, **kwargs)
             if switched is not MISSING:
                 result = switched
         return result
@@ -177,12 +177,6 @@ class StopPoint(ContextDecorator):
         if self.g_stopped:
             self.resumed = self.g_stopped.switch(result)
             return self.resumed
-
-    def _switch(self, *args, _result_=MISSING, **kwargs):
-        self._args = args
-        self._kwargs = kwargs
-        self._result_ = _result_
-        return self.switch(*args, _result_=_result_, **kwargs)
 
     def switch(self, *args, _result_=MISSING, **kwargs):
         arguments = BoundArguments(self.func, *args, **kwargs)

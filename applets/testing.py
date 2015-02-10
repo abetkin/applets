@@ -1,7 +1,6 @@
 import unittest
 from functools import update_wrapper
-from applets.base import  MISSING, StopPoint, stop_after, stop_before, \
-        MethodGreenlet
+from applets.base import  MISSING, StopPoint, stop_after, stop_before
 
 
 class StopPointTest(StopPoint):
@@ -33,7 +32,6 @@ class StopPointTest(StopPoint):
             runner = unittest.TextTestRunner()
             runner.run(case)
         return self.resume()
-        # TODO try...finally
 
 
 class StopBefore(StopPointTest):
@@ -45,8 +43,7 @@ class StopAfter(StopPointTest):
         return stop_after
 
 
-class StopBeforeSubtest: # rename
-
+class StopBeforeSubtest:
     def __get__(self, test, owner):
         def construct(*args, **kwargs):
             instance = StopBefore(*args, **kwargs)
@@ -56,7 +53,6 @@ class StopBeforeSubtest: # rename
         return construct
 
 class StopAfterSubtest:
-
     def __get__(self, test, owner):
         def construct(*args, **kwargs):
             instance = StopAfter(*args, **kwargs)
