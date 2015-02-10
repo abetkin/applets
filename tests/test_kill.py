@@ -1,7 +1,7 @@
 from applets.util import case
-import greenlet
-from applets.base import GreenletWrapper, stop_before, stop_after
-from applets import from_context, context
+from applets.base import GreenletWrapper
+from applets.handles import stop_before, stop_after
+from applets import from_context
 
 class A:
     x = 3
@@ -33,4 +33,4 @@ res = o.run()
 case.assertIsInstance(res, B)
 
 
-# TODO check that stop_points are parent greenlets
+# TODO check that handles are parent greenlets

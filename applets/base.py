@@ -1,9 +1,10 @@
 from functools import wraps
 import collections
-from contextlib import contextmanager, ContextDecorator
+from contextlib import contextmanager
 import greenlet
 
-from .util import as_context, MISSING, BoundArguments
+from .util import as_context, MISSING
+from .handles import HandleBefore, HandleAfter
 
 
 class Applet:
@@ -98,11 +99,11 @@ class MethodGreenlet(greenlet.greenlet):
     def __init__(self, method):
         super().__init__(method.__func__)
         self._method = method
-        # all_stop_points attribute is for optimization purposes
-        self.all_stop_points = dict(
-                (p, p) for p in getattr(self.parent, 'stop_points', ()))
-        self.all_stop_points.update(
-                getattr(self.parent, 'all_stop_points', ()))
+        # all_handles attribute is for optimization purposes
+        self.all_handles = dict(
+                (p, p) for p in getattr(self.parent, '_handles', ()))
+        self.all_handles.update(
+                getattr(self.parent, 'all_handles', ()))
 
     @property
     def __instance__(self):
@@ -133,101 +134,18 @@ class MethodGreenlet(greenlet.greenlet):
 
     def run(self, *args, **kwargs):
         result = MISSING
-        stop_point = self.all_stop_points.get((stop_before, self.__func__))
-        if stop_point and stop_point.is_active():
-            stop_point.g_stopped = self
-            result = stop_point.switch(*args, **kwargs)
+        handle = self.all_handles.get((HandleBefore, self.__func__))
+        if handle and handle.is_active():
+            handle.g_stopped = self
+            result = handle._switch(*args, **kwargs)
         if result is MISSING:
+            # *
             result = self.__func__(*args, **kwargs)
-
-        stop_point = self.all_stop_points.get((stop_after, self.__func__))
-        if stop_point and stop_point.is_active():
-            stop_point.g_stopped = self
-            switched = stop_point.switch(*args, _result_=result, **kwargs)
+            # *
+        handle = self.all_handles.get((HandleAfter, self.__func__))
+        if handle and handle.is_active():
+            handle.g_stopped = self # or just take current ?
+            switched = handle._switch(*args, _result_=result, **kwargs)
             if switched is not MISSING:
                 result = switched
         return result
-
-
-class StopPoint(ContextDecorator):
-
-    resumed = MISSING
-    g_stopped = None
-
-    @property
-    def stop_points(self):
-        return self.g_current.__dict__.setdefault('stop_points', [])
-
-    def activate(self):
-        self.stop_points.append(self)
-
-    def is_active(self):
-        if self.stop_points:
-            return self.stop_points[-1] == self
-
-    def __init__(self, stop_func):
-        self.func = stop_func
-        self.g_current = greenlet.getcurrent()
-        self.activate()
-
-    def resume(self, result=MISSING):
-        if self.resumed is not MISSING:
-            raise Exception('already resumed')
-        self.stop_points.remove(self)
-        if self.g_stopped:
-            self.resumed = self.g_stopped.switch(result)
-            return self.resumed
-
-    def switch(self, *args, _result_=MISSING, **kwargs):
-        arguments = BoundArguments(self.func, *args, **kwargs)
-        return self.g_current.switch(arguments)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *exc):
-        if exc[0]:
-            raise exc[0].with_traceback(exc[1], exc[2])
-        if self.resumed is MISSING:
-            self.resume()
-
-    def get_type(self):
-        return self.__class__
-
-    def kill(self):
-
-        def to_kill(g=self.g_stopped):
-            while g is not None and g != self.g_current:
-                yield g
-                g = g.parent
-        for g in reversed(list(to_kill())):
-            g.throw()
-        # TODO check that stop_points are parent greenlets
-
-    def __hash__(self):
-        return hash((self.get_type(), self.func))
-
-    def __eq__(self, other):
-        if isinstance(other, tuple):
-            return other == (self.get_type(), self.func)
-        if isinstance(other, StopPoint):
-            return self.func is other.func \
-                    and self.get_type() is other.get_type()
-
-
-class stop_before(StopPoint):
-    pass
-
-class stop_after(StopPoint):
-
-    def __init__(self, *_args, args=False, **_kwargs):
-        self.include_arguments = args  # whether to include call arguments
-                                       # too in the switched value or just
-                                       # the return value
-        super().__init__(*_args, **_kwargs)
-
-    def switch(self, *args, _result_=MISSING, **kwargs):
-        if not self.include_arguments:
-            return self.g_current.switch(_result_)
-        arguments = BoundArguments(self.func, *args, **kwargs)
-        return self.g_current.switch(_result_, arguments)

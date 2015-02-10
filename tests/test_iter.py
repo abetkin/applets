@@ -1,6 +1,6 @@
 from applets.util import case
-import greenlet
-from applets.base import GreenletWrapper, stop_before, stop_after
+from applets.base import GreenletWrapper
+from applets.handles import stop_before, stop_after
 from applets import from_context, context
 
 class A:

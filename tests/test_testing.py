@@ -1,7 +1,6 @@
 from applets.base import GreenletWrapper
 from applets import from_context
-from applets.testing import TestCase, StopAfter, StopBefore
-# from applets.util import case
+from applets.testing import TestCase, TestCaseAfter, TestCaseBefore
 
 class A:
     x = 3
@@ -20,28 +19,28 @@ class B:
         return from_context('x')
 
 
-# class T(TestCase):
+class T(TestCase):
 
-#     def test(self):
+    def test(self):
 
-#         @self.stop_before(B.walk, 'walking')
-#         def f(obj):
-#             self.assertFalse(obj.__b__)
+        @self.stop_before(B.walk, 'walking')
+        def f(obj):
+            self.assertFalse(obj.__b__)
 
-#         @self.stop_after(A.run, 'running A')
-#         def f(a, _result_):
-#             self.assertNotEqual(_result_, 4)
+        @self.stop_after(A.run, 'running A')
+        def g(a, _result_):
+            self.assertNotEqual(_result_, 4)
 
-#         o = A()
-#         ss = o.run()
+        o = A()
+        ss = o.run()
 
-@StopBefore(B.walk, 'walking')
-def f(case, obj):
-    case.assertFalse(obj.__b__)
+# @TestCaseBefore(B.walk, 'walking')
+# def f(case, obj):
+#     case.assertFalse(obj.__b__)
 
-@StopAfter(A.run, 'running A')
-def g(case, a, _result_):
-    case.assertNotEqual(_result_, 4)
+# @TestCaseAfter(A.run, 'running A')
+# def g(case, a, _result_):
+#     case.assertNotEqual(_result_, 4)
 
-o = A()
-ss = o.run()
+# o = A()
+# ss = o.run()

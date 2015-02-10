@@ -6,6 +6,9 @@ import inspect
 class MISSING:
     pass
 
+class ExplicitNone:
+    pass
+
 def as_context(obj):
     def lookup(attr):
         if isinstance(obj, collections.Mapping):
