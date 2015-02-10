@@ -131,3 +131,18 @@ class handler_before(FunctionHandle):
 
 class handler_after(FunctionHandle):
     handle_type = HandleAfter
+
+
+def resume(value=MISSING):
+    g_current = greenlet.getcurrent()
+    handles = getattr(g_current, '_handles', None)
+    assert handles, "Nothing to resume"
+    return handles[-1].resume(value)
+
+
+def resume_all():
+    g_current = greenlet.getcurrent()
+    value = None
+    while getattr(g_current, '_handles', None):
+        value = resume()
+    return value
