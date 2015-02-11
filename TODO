@@ -14,7 +14,7 @@ debugger: fix frame navigation
 stop: any condition
     all / configuration
 
-properties
+ContextAttribute - ?
 
 
-res = stop_after(Serializer.is_valid)
+is it required for method to be greenlet to use the context?

@@ -59,7 +59,6 @@ class HandleAfter:
 class HandleBefore:
     pass
 
-# rename ?
 class InteractiveHandle(Handle, ContextDecorator):
 
     resumed = MISSING

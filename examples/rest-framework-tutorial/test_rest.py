@@ -20,9 +20,18 @@ from applets.util import case
 stop_after(HyperlinkedModelSerializer.errors)
 # stop_after(HyperlinkedModelSerializer.data)
 
-cl = APIClient()
+class Client(APIClient):
+    @green_function
+    def get(self, *args, **kwargs):
+        return super().get(*args, **kwargs)
+
+    @green_function
+    def post(self, *args, **kwargs):
+        return super().post(*args, **kwargs)
+
+cl = Client()
 cl.login(username='vitalii', password='root')
-resp = green_function(cl.post)('/snippets/', {'title': 'titlu', 'code': 'codu'})
+resp = cl.post('/snippets/', {'title': 'titlu', 'code': 'codu'})
 # import IPython
 # IPython.embed()
 case.assertEqual(dict(resp), {})

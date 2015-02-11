@@ -46,12 +46,14 @@ class ListContext(list):
 
 ###########
 
-def from_context(name):
+def from_context(name, default=MISSING):
     context = greenlet.getcurrent().context
     value = context(name)
     if value is not MISSING:
         return value
-    raise AttributeError(name)
+    if default is MISSING:
+        raise AttributeError(name)
+    return default
 
 @contextmanager
 def context(ctx):
@@ -59,12 +61,23 @@ def context(ctx):
         ctx = as_context(ctx)
     g_current = greenlet.getcurrent()
     old_ctx = getattr(g_current, 'context', MISSING)
+    if isinstance(old_ctx, ListContext):
+        old_ctx.insert(0, ctx)
+        yield
+        old_ctx.remove(ctx)
+        return
     g_current.context = ctx
     yield
     if old_ctx is MISSING:
         del g_current.context
     else:
         g_current.context = old_ctx
+
+# TODO def replace_context() ?
+
+
+def ContextAttr(name, default=MISSING):
+    return property(lambda self: from_context(name, default))
 
 
 class Greenlet:
