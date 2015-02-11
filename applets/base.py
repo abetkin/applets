@@ -66,8 +66,8 @@ def context(ctx):
     else:
         g_current.context = old_ctx
 
-
-class GreenletWrapper:
+# update_wrapper ?
+class Greenlet:
     '''Wrapper for methods and functions.'''
 
     __self__ = None

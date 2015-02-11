@@ -1,11 +1,11 @@
-from applets.base import GreenletWrapper
+from applets.base import Greenlet
 from applets import from_context
 from applets.testing import TestCase, TestCaseAfter, TestCaseBefore
 
 class A:
     x = 3
 
-    @GreenletWrapper
+    @Greenlet
     def run(self):
         return B().walk() + 1
 
@@ -14,7 +14,7 @@ class B:
     def __init__(self):
         self.__b__ = True
 
-    @GreenletWrapper
+    @Greenlet
     def walk(self):
         return from_context('x')
 

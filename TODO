@@ -4,14 +4,19 @@ function based views
 
 #####
 
-tests
-
 django examples
+    serialize, deserialize, filter
 
 __________
 debugger: fix frame navigation
 
 
-# global current point, resume
+stop: any condition
+    all / configuration
 
-GreenletWrapper -> Greenlet
+properties
+
+
+res = stop_after(Serializer.is_valid)
+
+if it's a greenlet, all is ok (make a method in MethodGreenlet?)
