@@ -1,5 +1,5 @@
 # coding: utf-8
-from applets.base import Greenlet
+from applets.base import green_method
 from applets import from_context, context
 from applets.handles import stop_before, stop_after, resume, resume_all
 from applets.util import case
@@ -7,14 +7,14 @@ from applets.util import case
 class A:
     a = 1
 
-    @Greenlet
+    @green_method
     def run(self):
         return B().run()
 
 
 class B:
 
-    @Greenlet
+    @green_method
     def run(self):
         return from_context('a')
 

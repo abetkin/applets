@@ -1,4 +1,4 @@
-from applets.base import Greenlet
+from applets.base import green_method, green_function
 from applets.handles import handler_before, handler_after
 from applets import from_context
 from applets.util import case
@@ -6,18 +6,18 @@ from applets.util import case
 class A:
     x = 3
 
-    @Greenlet
+    @green_method
     def run(self):
         return B().walk() + 1
 
 class B:
 
-    @Greenlet
+    @green_method
     def walk(self):
         return from_context('x')
 
 
-@Greenlet
+@green_function
 def some_func():
 
     @handler_before(B.walk)

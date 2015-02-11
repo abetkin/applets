@@ -1,8 +1,9 @@
-
+import types
 from contextlib import ContextDecorator
 import greenlet
 
 from .util import MISSING, BoundArguments, ExplicitNone
+
 
 # TODO __repr__
 class Handle:
@@ -12,6 +13,11 @@ class Handle:
 
     def __init__(self, stop_func):
         self.func = stop_func
+        if not isinstance(self.func, types.FunctionType):
+            try:
+                self.func = self.func.__func__
+            except AttributeError:
+                self.func = self.func.fget
         self.g_current = greenlet.getcurrent()
         self.activate()
 
@@ -30,6 +36,7 @@ class Handle:
         raise NotImplementedError()
 
     def _switch(self, *args, **kwargs):
+        self.g_stopped = greenlet.getcurrent()
         try:
             return self.switch(*args, **kwargs)
         finally:
@@ -52,7 +59,7 @@ class HandleAfter:
 class HandleBefore:
     pass
 
-
+# rename ?
 class InteractiveHandle(Handle, ContextDecorator):
 
     resumed = MISSING

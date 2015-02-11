@@ -18,5 +18,3 @@ properties
 
 
 res = stop_after(Serializer.is_valid)
-
-if it's a greenlet, all is ok (make a method in MethodGreenlet?)

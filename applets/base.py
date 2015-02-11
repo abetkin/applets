@@ -66,52 +66,51 @@ def context(ctx):
     else:
         g_current.context = old_ctx
 
-# update_wrapper ?
+
 class Greenlet:
     '''Wrapper for methods and functions.'''
 
-    __self__ = None
+    def __init__(self, instance_arg=0):
+        self.instance_arg = instance_arg
 
-    def __init__(self, func):
-        self.__func__ = func
+    def _get_instance(self, *args, **kwargs):
+        if self.instance_arg is None:
+            return
+        try:
+            index = int(self.instance_arg)
+        except TypeError:
+            return kwargs[self.instance_arg]
+        else:
+            return args[index]
 
-    @property
-    def raw(self):
-        return self.__func__.__get__(self.__self__)
+    def __call__(self, func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            instance = self._get_instance(*args, **kwargs)
+            g = MethodGreenlet(wrapper, instance)
+            g.get_context()
+            return g.switch(*args, **kwargs)
+        return wrapper
 
-    def __get__(self, instance, owner):
-        if instance is not None:
-            self.__self__ = instance
-            return self
-        return self.__func__
-
-    def __call__(self, *args, **kwargs):
-        g = MethodGreenlet(self)
-        g.get_context()
-        if self.__self__ is not None:
-            args = (self.__self__,) + args
-        return g.switch(*args, **kwargs)
+green_function = Greenlet(None)
+green_method = Greenlet()
 
 
 class MethodGreenlet(greenlet.greenlet):
     ''''''
 
-    def __init__(self, method):
-        super().__init__(method.__func__)
-        self._method = method
+    def __init__(self, func, instance=None):
+        self._wrapper_func = func
+        self.__self__ = instance
+        super().__init__(self.__func__)
         # all_handles attribute is for optimization purposes
         self.all_handles = dict(
                 (p, p) for p in getattr(self.parent, '_handles', ()))
         self.all_handles.update(
                 getattr(self.parent, 'all_handles', ()))
-
-    @property
-    def __instance__(self):
-        return self._method.__self__
-
     @property
     def __func__(self):
-        return self._method.__func__
+        return self._wrapper_func.__wrapped__
 
     def get_context(self):
         if hasattr(self, 'context'):
@@ -122,29 +121,27 @@ class MethodGreenlet(greenlet.greenlet):
             if hasattr(g, 'context'):
                 new = new + g.context
                 break
-            if getattr(g, '__instance__', None) is not None:
-                new.append(g.__instance__)
+            if getattr(g, '__self__', None) is not None:
+                new.append(g.__self__)
             g = g.parent
         self.context = new
         return new
 
     def __repr__(self):
-        return 'MethodGreenlet: %s' % self.__instance__.__class__.__name__ \
-                if self.__instance__ is not None else '-'
+        return 'MethodGreenlet: %s' % self.__self__.__class__.__name__ \
+                if self.__self__ is not None else '-'
 
     def run(self, *args, **kwargs):
         result = MISSING
-        handle = self.all_handles.get((HandleBefore, self.__func__))
+        handle = self.all_handles.get((HandleBefore, self._wrapper_func))
         if handle and handle.is_active():
-            handle.g_stopped = self
             result = handle._switch(*args, **kwargs)
         if result is MISSING:
             # *
             result = self.__func__(*args, **kwargs)
             # *
-        handle = self.all_handles.get((HandleAfter, self.__func__))
+        handle = self.all_handles.get((HandleAfter, self._wrapper_func))
         if handle and handle.is_active():
-            handle.g_stopped = self # or just take current ?
             switched = handle._switch(*args, _result_=result, **kwargs)
             if switched is not MISSING:
                 result = switched
