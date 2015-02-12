@@ -70,7 +70,17 @@ def context(ctx):
 
 
 def ContextAttr(name, default=MISSING):
-    return property(lambda self: from_context(name, default))
+    def fget(self):
+        self.__dict__.setdefault('_context_attributes', {})
+        if name in self._context_attributes:
+            return self._context_attributes[name]
+        return from_context(name, default)
+
+    def fset(self, value):
+        self.__dict__.setdefault('_context_attributes', {})
+        self._context_attributes[name] = value
+
+    return property(fget, fset)
 
 
 class Greenlet:

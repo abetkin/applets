@@ -1,7 +1,7 @@
 
 from collections import OrderedDict
 
-from declared import Mark as mark, CollectMarksMeta
+from declared import Mark as mark, DeclaredMeta
 from green_context.util import case
 
 class custom(mark):
@@ -14,7 +14,7 @@ class custom(mark):
         return int(self.value)
 
 
-class MarkedApp(metaclass=CollectMarksMeta):
+class MarkedApp(metaclass=DeclaredMeta):
 
     mark1 = mark2 = custom(value=1)
 

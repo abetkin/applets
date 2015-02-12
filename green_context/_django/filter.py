@@ -1,7 +1,7 @@
 from operator import and_, or_
 from collections import OrderedDict
 from functools import partial, wraps
-from green_context.marks import Mark, CollectMarksMeta
+from green_context.marks import Mark, DeclaredMeta
 from green_context.base import ContextAttr, green_method
 
 from rest_framework import serializers
@@ -31,11 +31,16 @@ from functools import reduce
 
 
 
-class FilteringUnit(metaclass=CollectMarksMeta):
+class ICanFilter(metaclass=DeclaredMeta):
 
-    objects = ContextAttr('objects')
+    _filters = ContextAttr('_declared_filters')
+    queryset = ContextAttr('queryset')
 
-    def _process_pending_filters(self, source='objects', target='objects', operation=and_):
+    def __init__(self, queryset=None):
+        if queryset is not None:
+            self.queryset = queryset
+
+    def _process_pending_filters(self, source='queryset', target='objects', operation=and_):
         if not self.pending_filters:
             return
         base_qs = self.results[source]

@@ -41,3 +41,6 @@ filter.params = deserialize()
 
 
 _declared_fields = ContextAttr('_declared_fields')
+
+
+a + b: set skip on a and b
