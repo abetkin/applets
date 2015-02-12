@@ -1,6 +1,6 @@
-from applets.base import green_method
-from applets import from_context
-from applets.testing import TestCase, TestCaseAfter, TestCaseBefore
+from green_context.base import green_method
+from green_context import from_context
+from green_context.testing import TestCase, TestCaseAfter, TestCaseBefore
 
 class A:
     x = 3

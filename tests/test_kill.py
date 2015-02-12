@@ -1,7 +1,7 @@
-from applets.util import case
-from applets.base import green_method
-from applets.handles import stop_before, stop_after
-from applets import from_context
+from green_context.util import case
+from green_context.base import green_method
+from green_context.handles import stop_before, stop_after
+from green_context import from_context
 
 class A:
     x = 3

@@ -1,7 +1,7 @@
-from applets.base import green_method, green_function
-from applets.handles import handler_before, handler_after
-from applets import from_context
-from applets.util import case
+from green_context.base import green_method, green_function
+from green_context.handles import handler_before, handler_after
+from green_context import from_context
+from green_context.util import case
 
 class A:
     x = 3

@@ -1,12 +1,12 @@
 
 from collections import OrderedDict
 
-from applets.marks import Mark as mark, CollectMarksMeta
-from applets.util import case
+from declared import Mark as mark, CollectMarksMeta
+from green_context.util import case
 
 class custom(mark):
 
-    collect_into = 'numbers'
+    collect_into = '_declared_numbers'
 
     def build(self):
         if self.source_function:
@@ -23,5 +23,5 @@ class MarkedApp(metaclass=CollectMarksMeta):
         return 2
 
 case.assertSequenceEqual(
-    MarkedApp._collected['numbers'],
+    MarkedApp._declared_numbers,
     OrderedDict([('mark1', 1), ('mark2', 1), ('mark3', 2)]))

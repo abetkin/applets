@@ -1,8 +1,8 @@
 from operator import and_, or_
 from collections import OrderedDict
 from functools import partial, wraps
-from applets.marks import Mark, CollectMarksMeta
-from applets.base import ContextAttr, green_method
+from green_context.marks import Mark, CollectMarksMeta
+from green_context.base import ContextAttr, green_method
 
 from rest_framework import serializers
 

@@ -6,10 +6,10 @@ django.setup()
 from rest_framework.test import APIClient
 
 from snippets.serializers import HyperlinkedModelSerializer
-from applets.handles import stop_after, stop_before, \
+from green_context.handles import stop_after, stop_before, \
         handler_after, handler_before, resume
-from applets.base import green_method, green_function
-from applets.util import case
+from green_context.base import green_method, green_function
+from green_context.util import case
 
 
 # @handler_before(HyperlinkedModelSerializer.is_valid)
@@ -17,8 +17,8 @@ from applets.util import case
 #     '''import IPython
 #     IPython.embed()'''
 
-stop_after(HyperlinkedModelSerializer.errors)
-# stop_after(HyperlinkedModelSerializer.data)
+# stop_after(HyperlinkedModelSerializer.errors)
+stop_after(HyperlinkedModelSerializer.data)
 
 class Client(APIClient):
     @green_function

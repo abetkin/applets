@@ -1,8 +1,8 @@
 # coding: utf-8
-from applets.base import green_method
-from applets import from_context, context
-from applets.handles import stop_before, stop_after, resume, resume_all
-from applets.util import case
+from green_context.base import green_method
+from green_context import from_context, context
+from green_context.handles import stop_before, stop_after, resume, resume_all
+from green_context.util import case
 
 class A:
     a = 1

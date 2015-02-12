@@ -1,7 +1,7 @@
 import unittest
 from functools import update_wrapper, wraps
-from applets.base import  MISSING
-from applets.handles import FunctionHandle, HandleBefore, HandleAfter
+from green_context.base import  MISSING
+from green_context.handles import FunctionHandle, HandleBefore, HandleAfter
 
 
 class TestCaseHandle(FunctionHandle):

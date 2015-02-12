@@ -17,4 +17,27 @@ stop: any condition
 ContextAttribute - ?
 
 
-is it required for method to be greenlet to use the context?
+is it required for method to be greenlet to use the context? no, but it's recommended
+
+
+
+In [6]: _3._handles[0].g_current
+Out[6]: <greenlet.greenlet at 0x7f5db3610048>
+
+In [7]: _3._handles[0].g_stopped
+Out[7]: MethodGreenlet: SnippetSerializer
+
+In [8]: _.
+_.GreenletExit  _.context       _.error         _.getcurrent    _.gr_frame      _.run           _.switch
+_.all_handles   _.dead          _.get_context   _.gettrace      _.parent        _.settrace      _.throw
+
+In [8]: _.__self__
+
+############
+
+
+
+filter.params = deserialize()
+
+
+_declared_fields = ContextAttr('_declared_fields')

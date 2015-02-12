@@ -8,17 +8,17 @@ with codecs.open('README.md', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name="applets",
+    name="green_context",
 
     # There are various approaches to referencing the version. For a discussion,
     # see http://packaging.python.org/en/latest/tutorial.html#version
     version='0.1',
 
-    description="applets",
+    description="green_context",
     long_description=long_description,
 
     # The project URL.
-    url='https://github.com/abetkin/applets',
+    url='https://github.com/abetkin/green_context',
 
     # Author details
     author='abetkin',
@@ -46,7 +46,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages.
-    packages=["applets"],
+    packages=["green_context"],
 
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed.

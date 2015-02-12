@@ -1,17 +1,10 @@
 from functools import wraps
-import collections
 from contextlib import contextmanager
 import greenlet
 
 from .util import as_context, MISSING
 from .handles import HandleBefore, HandleAfter
 
-
-class Applet:
-
-    ctx = 1
-
-# TODO __contains__
 '''
 Context is an object you can get attributes from by calling it:
 
@@ -61,7 +54,7 @@ def context(ctx):
         ctx = as_context(ctx)
     g_current = greenlet.getcurrent()
     old_ctx = getattr(g_current, 'context', MISSING)
-    if isinstance(old_ctx, ListContext):
+    if isinstance(old_ctx, ListContext): # TODO test
         old_ctx.insert(0, ctx)
         yield
         old_ctx.remove(ctx)
