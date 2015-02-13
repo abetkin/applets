@@ -6,22 +6,22 @@ from green_context.util import case
 
 class custom(mark):
 
-    collect_into = '_declared_numbers'
+    def __new__(cls, f):
+        if callable(f):
+            f = f()
+        return int(f)
 
-    def build(self):
-        if self.source_function:
-            return int(self.source_function())
-        return int(self.value)
-
+custom.register(int)
 
 class MarkedApp(metaclass=DeclaredMeta):
 
-    mark1 = mark2 = custom(value=1)
+    mark1 = mark2 = custom(1)
 
-    @custom()
+    @custom
     def mark3():
         return 2
 
+
 case.assertSequenceEqual(
-    MarkedApp._declared_numbers,
+    MarkedApp._declared_marks,
     OrderedDict([('mark1', 1), ('mark2', 1), ('mark3', 2)]))

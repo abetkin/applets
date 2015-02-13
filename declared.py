@@ -6,19 +6,6 @@ class Mark(metaclass=ABCMeta):
 
     collect_into = '_declared_marks'
 
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
-
-    @classmethod
-    def _add_all(cls, marks_dict, klass):
-        for key, mark in marks_dict.items():
-            collect_into = getattr(mark, 'collect_into', Mark.collect_into)
-            if callable(collect_into):
-                collect_into = collect_into()
-            if not collect_into in klass.__dict__:
-                setattr(klass, collect_into, OrderedDict([(key, mark)]))
-            else:
-                getattr(klass, collect_into)[key] = mark
 
 
 class DeclaredMeta(type):
@@ -47,5 +34,16 @@ class DeclaredMeta(type):
             del namespace[_name]
 
         klass = type.__new__(cls, name, bases, namespace)
-        Mark._add_all(marks_dict, klass)
+        cls._add_all(marks_dict, klass)
         return klass
+
+    @classmethod
+    def _add_all(mcls, marks_dict, klass):
+        for key, mark in marks_dict.items():
+            collect_into = getattr(mark, 'collect_into', Mark.collect_into)
+            if callable(collect_into):
+                collect_into = collect_into()
+            if not collect_into in klass.__dict__:
+                setattr(klass, collect_into, OrderedDict([(key, mark)]))
+            else:
+                getattr(klass, collect_into)[key] = mark
