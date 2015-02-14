@@ -1,6 +1,6 @@
 from green_context.base import green_method, green_function
 from green_context.handles import handler_before, handler_after
-from green_context import from_context
+from green_context import getcontext
 from green_context.util import case
 
 class A:
@@ -14,7 +14,7 @@ class B:
 
     @green_method
     def walk(self):
-        return from_context('x')
+        return getcontext()['x']
 
 
 @green_function

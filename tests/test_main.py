@@ -1,6 +1,6 @@
 # coding: utf-8
 from green_context.base import green_method, green_function
-from green_context import from_context, context
+from green_context import getcontext, context
 from green_context.handles import stop_before, stop_after, resume, resume_all
 from green_context.util import case
 
@@ -17,7 +17,7 @@ class B:
 
     @green_function
     def run(self):
-        return from_context('a')
+        return getcontext()['a']
 
 
 o = A()

@@ -34,6 +34,6 @@ cl.login(username='vitalii', password='root')
 resp = cl.post('/snippets/', {'title': 'titlu', 'code': 'codu'})
 # import IPython
 # IPython.embed()
-case.assertEqual(dict(resp), {})
+case.assertIsInstance(resp, dict)
 resp = resume()
 print(resp.data)

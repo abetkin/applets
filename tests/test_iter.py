@@ -1,7 +1,7 @@
 from green_context.util import case
 from green_context.base import green_method
 from green_context.handles import stop_before, stop_after
-from green_context import from_context, context
+from green_context import getcontext, context
 
 class A:
     x = 3
@@ -14,7 +14,7 @@ class B:
 
     @green_method
     def walk(self):
-        return from_context('x')
+        return getcontext()['x']
 
 
 class C(A):
@@ -35,6 +35,7 @@ case.assertEqual(res, 6)
 
 
 class D(A):
+    # x = 5
 
     @green_method
     def run(self):

@@ -2,10 +2,19 @@ from copy import copy
 from collections import OrderedDict
 from abc import ABCMeta
 
+class SkipMark(Exception):
+    pass
+
 class Mark(metaclass=ABCMeta):
 
     collect_into = '_declared_marks'
 
+    def __init__(self, **kwds):
+        self.__dict__.update(kwds)
+
+    def build_me(self, marks_dict):
+        # can raise SkipMark
+        return self
 
 
 class DeclaredMeta(type):
@@ -40,9 +49,18 @@ class DeclaredMeta(type):
     @classmethod
     def _add_all(mcls, marks_dict, klass):
         for key, mark in marks_dict.items():
-            collect_into = getattr(mark, 'collect_into', Mark.collect_into)
+            if Mark in mark.__class__.__mro__:
+                mark_type = mark.__class__
+            else:
+                mark_type = getattr(klass, 'default_mark', Mark)
+            collect_into = mark_type.collect_into # where to store mark
             if callable(collect_into):
-                collect_into = collect_into()
+                collect_into = collect_into(mark)
+            try:
+                # build mark
+                mark = mark_type.build_me(mark, marks_dict)
+            except SkipMark:
+                continue
             if not collect_into in klass.__dict__:
                 setattr(klass, collect_into, OrderedDict([(key, mark)]))
             else:

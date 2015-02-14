@@ -1,5 +1,5 @@
 from green_context.base import green_method
-from green_context import from_context
+from green_context import getcontext
 from green_context.testing import TestCase, TestCaseAfter, TestCaseBefore
 
 class A:
@@ -16,7 +16,7 @@ class B:
 
     @green_method
     def walk(self):
-        return from_context('x')
+        return getcontext()['x']
 
 
 class T(TestCase):

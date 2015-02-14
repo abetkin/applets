@@ -17,10 +17,6 @@ stop: any condition
 ContextAttribute - ?
 
 
-is it required for method to be greenlet to use the context? no, but it's recommended
-
-
-
 In [6]: _3._handles[0].g_current
 Out[6]: <greenlet.greenlet at 0x7f5db3610048>
 
@@ -43,4 +39,6 @@ filter.params = deserialize()
 _declared_fields = ContextAttr('_declared_fields')
 
 
-a + b: set skip on a and b
+проверить, почему раньше работало
+
+duplicates ?

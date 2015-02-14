@@ -2,62 +2,38 @@ from functools import wraps
 from contextlib import contextmanager
 import greenlet
 
-from .util import as_context, MISSING
+from .util import MISSING
 from .handles import HandleBefore, HandleAfter
 
-'''
-Context is an object you can get attributes from by calling it:
-
-    >>> context('some_attr')
-'''
-
-class ListContext(list):
-
-    def __call__(self, name):
-        for obj in self:
-            if not callable(obj):
-                obj = as_context(obj)
-            value = obj(name)
-            if value is not MISSING:
-                return value
-        return MISSING
-
-    def __add__(self, other):
-        if not isinstance(other, list):
-            other = list((other,))
-        result = ListContext(self)
-        result.extend(other)
-        return result
-
-    def __radd__(self, other):
-        if not isinstance(other, list):
-            other = list((other,))
-        result = ListContext(other)
-        result.extend(self)
-        return result
+from collections import ChainMap, Mapping
 
 
-###########
+def getcontext():
+    return greenlet.getcurrent().context
 
-def from_context(name, default=MISSING):
-    context = greenlet.getcurrent().context
-    value = context(name)
-    if value is not MISSING:
-        return value
-    if default is MISSING:
-        raise AttributeError(name)
-    return default
+def ContextAttr(name, default=MISSING):
+
+    def fget(self):
+        context = getcontext()
+        if default is not MISSING:
+            return context.get(name, default)
+        return context[name]
+
+    def fset(self, value):
+        context = getcontext()
+        context[name] = value
+
+    return property(fget, fset)
+
 
 @contextmanager
 def context(ctx):
-    if isinstance(ctx, type) or not callable(ctx): # FIXME ?
-        ctx = as_context(ctx)
     g_current = greenlet.getcurrent()
     old_ctx = getattr(g_current, 'context', MISSING)
-    if isinstance(old_ctx, ListContext): # TODO test
-        old_ctx.insert(0, ctx)
+    if isinstance(old_ctx, ChainMap): # TODO test
+        old_ctx.maps.insert(0, ctx)
         yield
-        old_ctx.remove(ctx)
+        old_ctx.maps.remove(ctx)
         return
     g_current.context = ctx
     yield
@@ -68,21 +44,16 @@ def context(ctx):
 
 # TODO def replace_context() ?
 
+class ChainObjects(ChainMap):
 
-def ContextAttr(name, default=MISSING):
-    def fget(self):
-        self.__dict__.setdefault('_context_attributes', {})
-        if name in self._context_attributes:
-            return self._context_attributes[name]
-        return from_context(name, default)
+    def __missing__(self, key):
+        for obj in self.objects:
+            result = getattr(obj, key, MISSING)
+            if result is not MISSING:
+                return result
+        raise KeyError(key)
 
-    def fset(self, value):
-        self.__dict__.setdefault('_context_attributes', {})
-        self._context_attributes[name] = value
-
-    return property(fget, fset)
-
-
+# rename ?
 class Greenlet:
     '''Wrapper for methods and functions.'''
 
@@ -104,7 +75,6 @@ class Greenlet:
         def wrapper(*args, **kwargs):
             instance = self._get_instance(*args, **kwargs)
             g = MethodGreenlet(wrapper, instance)
-            g.get_context()
             return g.switch(*args, **kwargs)
         return wrapper
 
@@ -128,20 +98,34 @@ class MethodGreenlet(greenlet.greenlet):
     def __func__(self):
         return self._wrapper_func.__wrapped__
 
-    def get_context(self):
-        if hasattr(self, 'context'):
-            return self.context
-        g = self
-        new = ListContext()
-        while g is not None:
-            if hasattr(g, 'context'):
-                new = new + g.context
-                break
-            if getattr(g, '__self__', None) is not None:
-                new.append(g.__self__)
-            g = g.parent
-        self.context = new
-        return new
+    @property
+    def context(self):
+        if hasattr(self, '_context'):
+            return self._context
+        obj = self.__self__
+        objects = [obj]
+        def maps():
+            if obj is not None:
+                yield obj.__dict__
+                yield obj.__class__.__dict__
+            g = self.parent
+            while g is not None and not hasattr(g, 'context'):
+                g = g.parent
+            if g is None:
+                return
+            if isinstance(g.context, ChainObjects):
+                objects.extend(g.context.objects)
+                yield from g.context.maps[1:]
+            else:
+                assert isinstance(g.context, Mapping)
+                yield g.context
+        self._context = ChainObjects({}, *maps())
+        self._context.objects = objects
+        return self._context
+
+    @context.setter
+    def context(self, value):
+        self._context = value
 
     def __repr__(self):
         return 'MethodGreenlet: %s' % self.__self__.__class__.__name__ \

@@ -1,37 +1,39 @@
-from operator import and_, or_
 from collections import OrderedDict
-from functools import partial, wraps
-from green_context.marks import Mark, DeclaredMeta
-from green_context.base import ContextAttr, green_method
-
-from rest_framework import serializers
-
-from django.db.models.query import Q, QuerySet
-
-class qsfilter(Mark):
-    '''
-    Django queryset filter.
-    '''
-    collect_into = '_filters'
-
-class qobj(Mark):
-    collect_into = '_filters'
-
-class make_qs(Mark):
-    collect_into = '_filters'
-
-    def __init__(self, source='objects', operation=and_, **kwargs):
-        super().__init__(source=source, operation=operation, **kwargs)
-
-class filterfunc(Mark):
-    collect_into = '_filters'
+from declared import Mark, DeclaredMeta
+from green_context.base import green_method, green_function, ContextAttr
 
 
 from functools import reduce
+from qfilters import QFilter, QuerySetFilter
 
+from django.db.models.query import Q
+
+class FilterMark(Mark):
+
+    collect_into = '_declared_filters'
+
+    def build_me(self, marks):
+        if isinstance(self, Q):
+            return QFilter(self)
+        return self
+
+
+qobj = QFilter
+qsfilter = QuerySetFilter
+
+FilterMark.register(qobj)
+FilterMark.register(Q)
+FilterMark.register(qsfilter)
+
+
+class apply(FilterMark):
+    def __init__(self, operation):
+        self.op = operation
 
 
 class ICanFilter(metaclass=DeclaredMeta):
+
+    default_mark = FilterMark
 
     _filters = ContextAttr('_declared_filters')
     queryset = ContextAttr('queryset')
@@ -40,44 +42,19 @@ class ICanFilter(metaclass=DeclaredMeta):
         if queryset is not None:
             self.queryset = queryset
 
-    def _process_pending_filters(self, source='queryset', target='objects', operation=and_):
-        if not self.pending_filters:
-            return
-        base_qs = self.results[source]
-        assert isinstance(base_qs, QuerySet)
-        self.results[target] = reduce(operation, [f(base_qs) for f in self.pending_filters])
-        self.pending_filters = []
-
-    @green_method # ??
-    def main(self):
+    @green_method
+    def filter(self):
+        accumulated = []
+        for name, obj in self._filters.items():
+            if isinstance(obj, apply):
+                self._declared_filters[name] = reduce(obj.op, accumulated)
+                while accumulated:
+                    accumulated.pop().skip = True
+            else:
+                accumulated.append(obj)
         self.results = OrderedDict()
-        self.results['objects'] = self.objects
-        self.pending_filters = []
-
-        for obj_name, obj in self._filters.items():
-            if isinstance(obj, qsfilter):
-                @wraps(obj.source_function)
-                def _filter(qs, obj=obj):
-                    return obj.source_function(self, qs)
-                self.pending_filters.append(_filter)
-                continue
-            if isinstance(obj, qobj):
-                @wraps(obj.source_function)
-                def _filter(qs, obj=obj):
-                    q_obj = obj.source_function(self)
-                    return qs.filter(q_obj)
-                self.pending_filters.append(_filter)
-                continue
-            if isinstance(obj, make_qs):
-                self._process_pending_filters(obj.source, obj_name, obj.operation)
-                assert not obj.source_function
-                continue
-            if isinstance(obj, filterfunc):
-                self._process_pending_filters()
-                qs = self.results[obj.source]
-                self.results[obj_name] = obj.source_function(self, qs)
-                continue
-        self._process_pending_filters()
-
-        return self.results['objects']
-#         q = reduce(self.operation, self._q_objects)
+        queryset = self.queryset
+        for name, obj in self._filters.items():
+            if not getattr(obj, 'skip', None):
+                self.results[name] = queryset = obj(queryset)
+        return queryset
