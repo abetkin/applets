@@ -103,11 +103,8 @@ class MethodGreenlet(greenlet.greenlet):
         if hasattr(self, '_context'):
             return self._context
         obj = self.__self__
-        objects = [obj]
+        objects = []
         def maps():
-            if obj is not None:
-                yield obj.__dict__
-                yield obj.__class__.__dict__
             g = self.parent
             while g is not None and not hasattr(g, 'context'):
                 g = g.parent
@@ -115,9 +112,17 @@ class MethodGreenlet(greenlet.greenlet):
                 return
             if isinstance(g.context, ChainObjects):
                 objects.extend(g.context.objects)
+                if obj is not None and obj not in objects:
+                    objects.insert(0, obj)
+                    yield obj.__dict__
+                    yield obj.__class__.__dict__
                 yield from g.context.maps[1:]
             else:
                 assert isinstance(g.context, Mapping)
+                if obj is not None:
+                    objects.insert(0, obj)
+                    yield obj.__dict__
+                    yield obj.__class__.__dict__
                 yield g.context
         self._context = ChainObjects({}, *maps())
         self._context.objects = objects
