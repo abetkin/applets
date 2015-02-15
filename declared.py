@@ -12,9 +12,10 @@ class Mark(metaclass=ABCMeta):
     def __init__(self, **kwds):
         self.__dict__.update(kwds)
 
-    def build_me(self, marks_dict):
+    def build_me(self, marks):
         # can raise SkipMark
         return self
+
 
 
 class DeclaredMeta(type):
@@ -48,6 +49,7 @@ class DeclaredMeta(type):
 
     @classmethod
     def _add_all(mcls, marks_dict, klass):
+        all_marks = list(marks_dict.values())
         for key, mark in marks_dict.items():
             if Mark in mark.__class__.__mro__:
                 mark_type = mark.__class__
@@ -58,7 +60,7 @@ class DeclaredMeta(type):
                 collect_into = collect_into(mark)
             try:
                 # build mark
-                mark = mark_type.build_me(mark, marks_dict)
+                mark = mark_type.build_me(mark, all_marks)
             except SkipMark:
                 continue
             if not collect_into in klass.__dict__:

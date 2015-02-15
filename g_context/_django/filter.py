@@ -29,9 +29,11 @@ class apply(FilterMark):
         self.op = operation
 
 
-class Filter:
+class Filter(metaclass=DeclaredMeta):
 
-    _filters = ContextAttr('_declared_filters')
+    default_mark = FilterMark
+
+    _declared_filters = ContextAttr('_declared_filters')
     queryset = ContextAttr('queryset')
 
     def __init__(self, queryset=None):
@@ -41,16 +43,16 @@ class Filter:
     @green_method
     def filter(self):
         accumulated = []
-        for name, obj in self._filters.items():
+        for name, obj in self._declared_filters.items():
             if isinstance(obj, apply):
-                self._filters[name] = reduce(obj.op, accumulated)
+                self._declared_filters[name] = reduce(obj.op, accumulated)
                 while accumulated:
                     accumulated.pop().skip = True
             else:
                 accumulated.append(obj)
         self.results = OrderedDict()
         queryset = self.queryset
-        for name, obj in self._filters.items():
+        for name, obj in self._declared_filters.items():
             if not getattr(obj, 'skip', None):
                 self.results[name] = queryset = obj(queryset)
         return queryset
