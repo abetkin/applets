@@ -2,7 +2,7 @@ from functools import wraps
 from contextlib import contextmanager
 import greenlet
 
-from .util import MISSING
+from .util import Missing
 from .handles import HandleBefore, HandleAfter
 
 from collections import ChainMap, Mapping
@@ -12,11 +12,11 @@ def getcontext():
     # FIXME AttributeError
     return greenlet.getcurrent().context
 
-def ContextAttr(name, default=MISSING):
+def ContextAttr(name, default=Missing):
 
     def fget(self):
         context = getcontext()
-        if default is not MISSING:
+        if default is not Missing:
             return context.get(name, default)
         return context[name]
 
@@ -45,6 +45,7 @@ def context(*objects):
 
 # TODO def replace_context() ?
 
+@Mapping.register
 class ChainObjects:
 
     def __init__(self, *objects):
@@ -62,7 +63,8 @@ class ChainObjects:
                     yield obj.__class__.__dict__
         self._chainmap = ChainMap({}, *maps())
 
-    # TODO repr
+    def __repr__(self):
+        return 'Chain ' + repr(self.objects)
 
     def __getitem__(self, key):
         for mapping in self._chainmap.maps:
@@ -102,8 +104,8 @@ class ChainObjects:
 
     def __missing__(self, key):
         for obj in self.objects:
-            result = getattr(obj, key, MISSING)
-            if result is not MISSING:
+            result = getattr(obj, key, Missing)
+            if result is not Missing:
                 return result
         raise KeyError(key)
 
@@ -180,17 +182,17 @@ class MethodGreenlet(greenlet.greenlet):
                 if self.__self__ is not None else '-'
 
     def run(self, *args, **kwargs):
-        result = MISSING
+        result = Missing
         handle = self.all_handles.get((HandleBefore, self._wrapper_func))
         if handle and handle.is_active():
             result = handle._switch(*args, **kwargs)
-        if result is MISSING:
+        if result is Missing:
             # *
             result = self.__func__(*args, **kwargs)
             # *
         handle = self.all_handles.get((HandleAfter, self._wrapper_func))
         if handle and handle.is_active():
             switched = handle._switch(*args, _result_=result, **kwargs)
-            if switched is not MISSING:
+            if switched is not Missing:
                 result = switched
         return result

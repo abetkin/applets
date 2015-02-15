@@ -1,6 +1,6 @@
 import unittest
 from functools import update_wrapper, wraps
-from g_context.base import  MISSING
+from g_context.base import  Missing
 from g_context.handles import FunctionHandle, HandleBefore, HandleAfter
 
 
@@ -11,8 +11,8 @@ class TestCaseHandle(FunctionHandle):
         super().__init__(func)
         self._description = description
 
-    def switch(self, *args, _result_=MISSING, **kwargs):
-        if _result_ is not MISSING:
+    def switch(self, *args, _result_=Missing, **kwargs):
+        if _result_ is not Missing:
             kwargs['_result_'] = _result_
         if self.test_case is not None:
             subtest = self.test_case.subTest(self._description)
@@ -26,7 +26,7 @@ class TestCaseHandle(FunctionHandle):
                                              description=self._description)
             runner = unittest.TextTestRunner()
             runner.run(case)
-        return MISSING
+        return Missing
 
 
 class TestCaseBefore(TestCaseHandle):

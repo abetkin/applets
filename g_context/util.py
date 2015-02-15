@@ -3,7 +3,7 @@ import collections
 import unittest
 import inspect
 
-class MISSING:
+class Missing:
     pass
 
 class ExplicitNone:
@@ -44,10 +44,10 @@ class BoundArguments:
             yield self.bound_args.get(name, parameter.default)
 
     def __getattr__(self, name):
-        value = self.bound_args.get(name, MISSING)
-        if value is not MISSING:
+        value = self.bound_args.get(name, Missing)
+        if value is not Missing:
             return value
-        value = self.signature.parameters.get(name, MISSING)
-        if value is not MISSING:
+        value = self.signature.parameters.get(name, Missing)
+        if value is not Missing:
             return value
         return KeyError(name)

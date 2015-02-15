@@ -2,7 +2,7 @@ import types
 from contextlib import ContextDecorator
 import greenlet
 
-from .util import MISSING, BoundArguments, ExplicitNone
+from .util import Missing, BoundArguments, ExplicitNone
 
 
 # TODO __repr__
@@ -32,7 +32,7 @@ class Handle:
         if self.handles:
             return self.handles[-1] == self
 
-    def switch(self, *args, _result_=MISSING, **kwargs):
+    def switch(self, *args, _result_=Missing, **kwargs):
         raise NotImplementedError()
 
     def _switch(self, *args, **kwargs):
@@ -61,15 +61,15 @@ class HandleBefore:
 
 class InteractiveHandle(Handle, ContextDecorator):
 
-    resumed = MISSING
+    resumed = Missing
 
-    def resume(self, result=MISSING):
-        assert self.resumed is MISSING, "Already resumed"
+    def resume(self, result=Missing):
+        assert self.resumed is Missing, "Already resumed"
         if self.g_stopped:
             self.resumed = self.g_stopped.switch(result)
             return self.resumed
 
-    def switch(self, *args, _result_=MISSING, **kwargs):
+    def switch(self, *args, _result_=Missing, **kwargs):
         arguments = BoundArguments(self.func, *args, **kwargs)
         return self.g_current.switch(arguments)
 
@@ -79,7 +79,7 @@ class InteractiveHandle(Handle, ContextDecorator):
     def __exit__(self, *exc):
         if exc[0]:
             raise exc[0].with_traceback(exc[1], exc[2])
-        if self.resumed is MISSING:
+        if self.resumed is Missing:
             self.resume()
 
     def kill(self):
@@ -105,7 +105,7 @@ class stop_after(InteractiveHandle):
                                        # the return value
         super().__init__(*_args, **_kwargs)
 
-    def switch(self, *args, _result_=MISSING, **kwargs):
+    def switch(self, *args, _result_=Missing, **kwargs):
         if not self.include_arguments:
             return self.g_current.switch(_result_)
         arguments = BoundArguments(self.func, *args, **kwargs)
@@ -122,12 +122,12 @@ class FunctionHandle(Handle):
     def activate(self):
         self.handles.insert(0, self)
 
-    def switch(self, *args, _result_=MISSING, **kwargs):
-        if _result_ is not MISSING:
+    def switch(self, *args, _result_=Missing, **kwargs):
+        if _result_ is not Missing:
             kwargs['_result_'] = _result_
         ret = self.handler_func(*args, **kwargs)
         if ret is None:
-            ret = MISSING
+            ret = Missing
         elif ret is ExplicitNone:
             ret = None
         return ret
@@ -139,7 +139,7 @@ class handler_after(FunctionHandle):
     handle_type = HandleAfter
 
 
-def resume(value=MISSING):
+def resume(value=Missing):
     g_current = greenlet.getcurrent()
     handles = getattr(g_current, '_handles', None)
     assert handles, "Nothing to resume"
