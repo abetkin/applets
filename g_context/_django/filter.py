@@ -18,12 +18,10 @@ class FilterMark(Mark):
         return self
 
 
-qobj = QFilter
-qsfilter = QuerySetFilter
+qobj = FilterMark.register(QFilter)
+qsfilter = FilterMark.register(QuerySetFilter)
 
-FilterMark.register(qobj)
 FilterMark.register(Q)
-FilterMark.register(qsfilter)
 
 
 class apply(FilterMark):
