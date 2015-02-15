@@ -111,8 +111,7 @@ class ChainObjects:
         return self.__class__(obj, *self.objects)
 
 
-# rename ?
-class Greenlet:
+class GreenletWrapper:
     '''Wrapper for methods and functions.'''
 
     def __init__(self, instance_arg=0):
@@ -136,8 +135,8 @@ class Greenlet:
             return g.switch(*args, **kwargs)
         return wrapper
 
-green_function = Greenlet(None)
-green_method = Greenlet()
+green_function = GreenletWrapper(None)
+green_method = GreenletWrapper()
 
 
 class MethodGreenlet(greenlet.greenlet):

@@ -1,6 +1,6 @@
-from green_context.base import green_method
-from green_context import getcontext
-from green_context.testing import TestCase, TestCaseAfter, TestCaseBefore
+from g_context.base import green_method
+from g_context import getcontext
+from g_context.testing import TestCase, TestCaseAfter, TestCaseBefore
 
 class A:
     x = 3

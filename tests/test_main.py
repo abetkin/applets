@@ -1,8 +1,8 @@
 # coding: utf-8
-from green_context.base import green_method, green_function
-from green_context import getcontext, context
-from green_context.handles import stop_before, stop_after, resume, resume_all
-from green_context.util import case
+from g_context.base import green_method, green_function
+from g_context import getcontext, context
+from g_context.handles import stop_before, stop_after, resume, resume_all
+from g_context.util import case
 
 class A:
     a = 1

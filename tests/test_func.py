@@ -1,7 +1,7 @@
-from green_context.base import green_method, green_function
-from green_context.handles import handler_before, handler_after
-from green_context import getcontext
-from green_context.util import case
+from g_context.base import green_method, green_function
+from g_context.handles import handler_before, handler_after
+from g_context import getcontext
+from g_context.util import case
 
 class A:
     x = 3

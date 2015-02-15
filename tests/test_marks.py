@@ -2,7 +2,7 @@
 from collections import OrderedDict
 
 from declared import Mark as mark, DeclaredMeta
-from green_context.util import case
+from g_context.util import case
 
 class custom(mark):
 

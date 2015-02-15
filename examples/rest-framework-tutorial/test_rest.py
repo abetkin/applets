@@ -6,10 +6,10 @@ django.setup()
 from rest_framework.test import APIClient
 
 from snippets.serializers import HyperlinkedModelSerializer
-from green_context.handles import stop_after, stop_before, \
+from g_context.handles import stop_after, stop_before, \
         handler_after, handler_before, resume
-from green_context.base import green_method, green_function
-from green_context.util import case
+from g_context.base import green_method, green_function
+from g_context.util import case
 
 
 # @handler_before(HyperlinkedModelSerializer.is_valid)
