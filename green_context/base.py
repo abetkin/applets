@@ -9,6 +9,7 @@ from collections import ChainMap, Mapping
 
 
 def getcontext():
+    # FIXME AttributeError
     return greenlet.getcurrent().context
 
 def ContextAttr(name, default=MISSING):
@@ -27,24 +28,77 @@ def ContextAttr(name, default=MISSING):
 
 
 @contextmanager
-def context(ctx):
+def context(*objects):
     g_current = greenlet.getcurrent()
-    old_ctx = getattr(g_current, 'context', MISSING)
-    if isinstance(old_ctx, ChainMap): # TODO test
-        old_ctx.maps.insert(0, ctx)
-        yield
-        old_ctx.maps.remove(ctx)
-        return
-    g_current.context = ctx
-    yield
-    if old_ctx is MISSING:
+    old_ctx = getattr(g_current, 'context', None)
+    objects = list(objects)
+    if isinstance(old_ctx, ChainObjects):
+        objects.extend(old_ctx.objects)
+    elif old_ctx is not None:
+        objects.append(old_ctx)
+    g_current.context = ChainObjects(*objects)
+    yield g_current.context
+    if old_ctx is None:
         del g_current.context
     else:
         g_current.context = old_ctx
 
 # TODO def replace_context() ?
 
-class ChainObjects(ChainMap):
+class ChainObjects:
+
+    def __init__(self, *objects):
+        self.objects = []
+        def maps():
+            for obj in objects:
+                if obj is None or obj in self.objects:
+                    continue
+                self.objects.append(obj)
+                if isinstance(obj, Mapping):
+                    yield obj
+                    continue
+                yield obj.__dict__
+                if not isinstance(obj, type):
+                    yield obj.__class__.__dict__
+        self._chainmap = ChainMap({}, *maps())
+
+    # TODO repr
+
+    def __getitem__(self, key):
+        for mapping in self._chainmap.maps:
+            try:
+                return mapping[key]
+            except KeyError:
+                pass
+        return self.__missing__(key)
+
+    def __setitem__(self, key, value):
+        self._chainmap[key] = value
+
+    def __delitem__(self, key):
+        del self._chainmap[key]
+
+    def __bool__(self):
+        return bool(self.objects)
+
+    def get(self, key, default=None):
+        return self[key] if key in self else default
+
+    def __contains__(self, key):
+        return key in self._chainmap # TODO search objects ?
+
+    def __iter__(self):
+        yield from self.objects
+
+    def __len__(self):
+        return len(self.objects)
+
+    def __eq__(self, other):
+        if isinstance(other, ChainObjects):
+            return self.objects == other.objects
+
+    def __ne__(self, other):
+        return not (self == other)
 
     def __missing__(self, key):
         for obj in self.objects:
@@ -52,6 +106,10 @@ class ChainObjects(ChainMap):
             if result is not MISSING:
                 return result
         raise KeyError(key)
+
+    def new_child(self, obj):
+        return self.__class__(obj, *self.objects)
+
 
 # rename ?
 class Greenlet:
@@ -98,34 +156,20 @@ class MethodGreenlet(greenlet.greenlet):
     def __func__(self):
         return self._wrapper_func.__wrapped__
 
+    def _new_context(self):
+        g = self.parent
+        while g is not None and not hasattr(g, 'context'):
+            g = g.parent
+        if g is None:
+            return ChainObjects()
+        assert isinstance(g.context, ChainObjects)
+        obj = g.__self__ if isinstance(g, MethodGreenlet) else None
+        return g.context.new_child(obj)
+
     @property
     def context(self):
-        if hasattr(self, '_context'):
-            return self._context
-        obj = self.__self__
-        objects = []
-        def maps():
-            g = self.parent
-            while g is not None and not hasattr(g, 'context'):
-                g = g.parent
-            if g is None:
-                return
-            if isinstance(g.context, ChainObjects):
-                objects.extend(g.context.objects)
-                if obj is not None and obj not in objects:
-                    objects.insert(0, obj)
-                    yield obj.__dict__
-                    yield obj.__class__.__dict__
-                yield from g.context.maps[1:]
-            else:
-                assert isinstance(g.context, Mapping)
-                if obj is not None:
-                    objects.insert(0, obj)
-                    yield obj.__dict__
-                    yield obj.__class__.__dict__
-                yield g.context
-        self._context = ChainObjects({}, *maps())
-        self._context.objects = objects
+        if not hasattr(self, '_context'):
+            self._context = self._new_context()
         return self._context
 
     @context.setter

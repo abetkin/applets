@@ -34,11 +34,3 @@ In [8]: _.__self__
 
 
 filter.params = deserialize()
-
-
-_declared_fields = ContextAttr('_declared_fields')
-
-
-проверить, почему раньше работало
-
-duplicates ?

@@ -31,9 +31,7 @@ class apply(FilterMark):
         self.op = operation
 
 
-class ICanFilter(metaclass=DeclaredMeta):
-
-    default_mark = FilterMark
+class Filter:
 
     _filters = ContextAttr('_declared_filters')
     queryset = ContextAttr('queryset')
@@ -47,7 +45,7 @@ class ICanFilter(metaclass=DeclaredMeta):
         accumulated = []
         for name, obj in self._filters.items():
             if isinstance(obj, apply):
-                self._declared_filters[name] = reduce(obj.op, accumulated)
+                self._filters[name] = reduce(obj.op, accumulated)
                 while accumulated:
                     accumulated.pop().skip = True
             else:
