@@ -12,7 +12,7 @@ class FilterMark(Mark):
 
     collect_into = '_declared_filters'
 
-    def build_me(self, marks):
+    def build_me(self, marks, owner):
         if isinstance(self, Q):
             return QFilter(self)
         return self
@@ -29,11 +29,11 @@ class apply(FilterMark):
         self.op = operation
 
 
-class Filter(metaclass=DeclaredMeta):
+class Filter:
 
-    default_mark = FilterMark
+    # default_mark = FilterMark
 
-    _declared_filters = ContextAttr('_declared_filters')
+    # _declared_filters = ContextAttr('_declared_filters')
     queryset = ContextAttr('queryset')
 
     def __init__(self, queryset=None):
