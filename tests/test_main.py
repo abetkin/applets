@@ -18,18 +18,21 @@ class B:
     def run(self):
         return context['a']
 
-
 o = A()
 case.assertEqual(o.run(), 1)
 
 with add_context({'a': 2}):
     case.assertEqual(B().run(), 2)
 
-# stop_after(A.run)
-# stop_before(B.run)
 
-# o = A()
-# o.run()
-# # case.assertEqual(resume(), 1)
-# # case.assertEqual(resume(), 1)
-# case.assertEqual(resume_all(), 1)
+@post_hook(A.run)
+def post(o, ret):
+    case.assertEqual(ret, 1)
+
+@pre_hook(B.run)
+def pre(obj):
+    case.assertIsInstance(obj, B)
+
+with post, pre:
+    o = A()
+    case.assertEqual(o.run(), 1)

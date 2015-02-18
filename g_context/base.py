@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 from .util import Missing, ExplicitNone
 
-from collections import Mapping
+from collections import Mapping, deque
 import threading
 
 
@@ -117,7 +117,7 @@ class ObjectsStack:
 
 
 context = threadlocal.context = ObjectsStack()
-threadlocal.hooks = []
+threadlocal.hooks = deque()
 
 
 class ContextWrapper:
@@ -148,17 +148,19 @@ class ContextWrapper:
         def wrapper(*args, **kwargs):
             with self.as_manager(*args, **kwargs):
                 result = None
-                hook = threadlocal.hooks[-1] if threadlocal.hooks else None
-                if hook == (pre_hook, wrapper):
-                    result = hook.hook_func(*args, **kwargs)
+                hooks = threadlocal.hooks
+                if hooks and hooks[-1] == (pre_hook, wrapper):
+                    result = hooks[-1].hook_func(*args, **kwargs)
+                    hooks.rotate(1)
                 if result is None:
                     # *
                     result = func(*args, **kwargs)
                     # *
                 elif result is ExplicitNone:
                     result = None
-                if hook == (post_hook, wrapper):
-                    ret = hook.hook_func(*args, ret=result, **kwargs)
+                if hooks and hooks[-1] == (post_hook, wrapper):
+                    ret = hooks[-1].hook_func(*args, ret=result, **kwargs)
+                    hooks.rotate(1)
                     if ret is ExplicitNone:
                         result = None
                     elif ret is not None:
@@ -178,8 +180,17 @@ class Hook:
         self.func = func
         self.hook_func = hook_func
 
+    def __repr__(self):
+        hook_type = {
+            pre_hook: 'pre',
+            post_hook: 'post',
+        }[self.type]
+        hook_name = self.hook_func.__name__ # FIXME can be any callable
+        return '%s: %s %s' % (hook_name, hook_type, self.func)
+
     def __call__(self, hook_func):
         self.hook_func = hook_func
+        return self
 
     def __enter__(self):
         threadlocal.hooks.append(self)
@@ -187,7 +198,7 @@ class Hook:
     def __exit__(self, *exc):
         if exc[0]:
             raise exc[0].with_traceback(exc[1], exc[2])
-        threadlocal.hooks.pop()
+        threadlocal.hooks.remove(self)
 
     def __hash__(self):
         return hash((self.type, self.func))
