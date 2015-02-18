@@ -1,7 +1,7 @@
 import unittest
 from functools import wraps
 from collections import deque
-from .util import  threadlocal
+from .util import  threadlocal, Missing
 
 hooks_deque = threadlocal.hooks_deque = deque()
 hooks_dict = threadlocal.hooks_dict = dict()
@@ -39,7 +39,7 @@ class Hook:
         hooks_dict[self] = self
 
     def __exit__(self, *exc):
-        if exc[0]:
+        if exc and exc[0]:
             raise exc[0].with_traceback(exc[1], exc[2])
         del hooks_dict[self]
 
@@ -72,7 +72,7 @@ class OrderedHook(Hook):
         hooks_deque.append(self)
 
     def __exit__(self, *exc):
-        if exc[0]:
+        if exc and exc[0]:
             raise exc[0].with_traceback(exc[1], exc[2])
         hooks_deque.remove(self)
 
@@ -121,3 +121,45 @@ class SubTest:
 class TestCase(unittest.TestCase):
     stop_before = SubTest(pre_hook)
     stop_after = SubTest(post_hook)
+
+
+## Exit hooks (raise Exception) ##
+
+class Exit(Exception):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+class CriticalHook(Hook):
+
+    def __init__(self, func):
+        super().__init__(func)
+        self.error = Exit()
+
+    def __enter__(self):
+        super().__enter__()
+        return self.error
+
+    def __exit__(self, *exc):
+        super().__exit__()
+        if exc and issubclass(exc[0], Exit):
+            return True
+
+
+class exit_before(CriticalHook):
+
+    type = pre_hook
+
+    def execute(self, *args, **kwargs):
+        self.error.args = args
+        self.error.kwargs = kwargs
+        raise self.error
+
+class exit_after(CriticalHook):
+
+    type = post_hook
+
+    def execute(self, *args, ret=Missing, **kwargs):
+        self.error.args = args
+        self.error.kwargs = kwargs
+        self.error.ret = ret
+        raise self.error
