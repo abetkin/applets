@@ -6,19 +6,29 @@ from .util import Missing, ExplicitNone
 from collections import Mapping, deque
 import threading
 
+import greenlet
 
-threadlocal = threading.local()
+
+# threadlocal = threading.local()
+threadlocal = greenlet.getcurrent()
 
 
 def ContextAttr(name, default=Missing):
 
-    def fget(self):
+    dic = {}
+
+    def fget(self, context=context):
+        if name in dic:
+            return dic[name]
+        # if self in context.objects:
+        #     context = ObjectsStack(context.objects)
+        #     context.objects.remove(self)
         if default is not Missing:
             return context.get(name, default)
         return context[name]
 
     def fset(self, value):
-        context[name] = value
+        dic[name] = value
 
     return property(fget, fset)
 
@@ -42,9 +52,11 @@ class ObjectsStack:
 
     pending = None
 
-    def __init__(self):
-        self._objects = []
-        self._dic = {}
+    def __init__(self, objects=None):
+        self._objects = objects or []
+
+    def __copy__(self):
+        return self.__class__(self.objects)
 
     @property
     def objects(self):
@@ -57,8 +69,6 @@ class ObjectsStack:
         if isinstance(key, int):
             # a bit of user-friendly interface
             return self.objects[key]
-        if key in self._dic:
-            return self._dic[key]
         for obj in self.objects:
             try:
                 if isinstance(obj, Mapping):
@@ -72,10 +82,10 @@ class ObjectsStack:
         raise KeyError(key)
 
     def __setitem__(self, key, value):
-        self._dic[key] = value
+        raise NotImplementedError()
 
     def __delitem__(self, key):
-        del self._dic[key]
+        raise NotImplementedError()
 
     def __bool__(self):
         return bool(self.objects)
@@ -113,7 +123,7 @@ class ObjectsStack:
         return self.pending # the success of the operation
 
     def pop(self):
-        self._objects.pop()
+        self._objects.pop(0)
 
 
 context = threadlocal.context = ObjectsStack()

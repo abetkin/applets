@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from declared import Mark, DeclaredMeta
-from g_context.base import green_method, green_function, ContextAttr
+from g_context.base import method, function, ContextAttr
 
 
 from functools import reduce
@@ -30,29 +30,26 @@ class apply(FilterMark):
 
 
 class Filter:
-
-    # default_mark = FilterMark
-
-    # _declared_filters = ContextAttr('_declared_filters')
+    filters = ContextAttr('_declared_filters')
     queryset = ContextAttr('queryset')
 
     def __init__(self, queryset=None):
         if queryset is not None:
             self.queryset = queryset
 
-    @green_method
+    @method
     def filter(self):
         accumulated = []
-        for name, obj in self._declared_filters.items():
+        for name, obj in self.filters.items():
             if isinstance(obj, apply):
-                self._declared_filters[name] = reduce(obj.op, accumulated)
+                self.filters[name] = reduce(obj.op, accumulated)
                 while accumulated:
                     accumulated.pop().skip = True
             else:
                 accumulated.append(obj)
         self.results = OrderedDict()
         queryset = self.queryset
-        for name, obj in self._declared_filters.items():
+        for name, obj in self.filters.items():
             if not getattr(obj, 'skip', None):
                 self.results[name] = queryset = obj(queryset)
         return queryset

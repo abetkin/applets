@@ -1,49 +1,32 @@
 from g_context.util import case
-from g_context.base import green_method
-from g_context.handles import stop_before, stop_after
-from g_context import getcontext, context
+from g_context.base import method, pre_hook, post_hook
+from g_context import context
 
 class A:
     x = 3
 
-    @green_method
+    @method
     def run(self):
         return B().walk() + 1
 
 class B:
 
-    @green_method
+    @method
     def walk(self):
-        return getcontext()['x']
+        return context['x']
 
 
 class C(A):
 
-    @green_method
+    def incr(self, *args, ret=None):
+        return ret + 2
+
+    @method
     def run(self):
-        with stop_after(A.run) as A_run:
-            with stop_before(B.walk) as stopped:
-                ret = super().run()
-                b, = ret
-                stopped.resume(5)
-        return A_run.resumed
+        with post_hook(B.walk, self.incr):
+            return super().run()
 
 
 o = C()
 res = o.run()
 case.assertEqual(res, 6)
-
-
-class D(A):
-    # x = 5
-
-    @green_method
-    def run(self):
-        with stop_after(A.run) as sce:
-            with stop_after(B.walk):
-                super().run()
-        return sce.resumed
-
-o = D()
-res = o.run()
-case.assertEqual(res, 4)

@@ -1,4 +1,4 @@
-from g_context.base import getcontext, green_function, green_method, ContextAttr
+from g_context.base import context, function, method, ContextAttr
 from declared import Mark, SkipMark
 
 from rest_framework.serializers import Field, Serializer, \
@@ -15,7 +15,7 @@ def serializer_class(baseclass):
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            self._declared_fields = getcontext()['_declared_fields']
+            self._declared_fields = context['_declared_fields']
 
         class Meta:
             list_serializer_class = ListSerializer
@@ -23,11 +23,11 @@ def serializer_class(baseclass):
     return Serializer
 
 
-@green_function
+@function
 def deserialize(data=None, klass=Serializer):
     # TODO
     if data is None:
-        data = getcontext()['request'].QUERY_PARAMS
+        data = context['request'].QUERY_PARAMS
     new_class = serializer_class(klass)
     s = new_class(data=data)
     if s.is_valid():
@@ -40,7 +40,7 @@ def ContextDict(*keys):
     def fget(self, ):
         if not dic:
             for key in keys:
-                dic[key] = getcontext()[key]
+                dic[key] = context[key]
         return dic
 
     def fset(self, value):
@@ -48,10 +48,10 @@ def ContextDict(*keys):
     return property(fget, fset)
 
 
-@green_function
+@function
 def serialize(obj=None, klass=Serializer, **kwargs):
     if obj is None:
-        obj = getcontext()['object']
+        obj = context['object']
     new_class = serializer_class(klass)
     s = new_class(obj, **kwargs)
     return s.data

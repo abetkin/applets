@@ -7,17 +7,16 @@ from rest_framework.test import APIClient
 
 from snippets.serializers import HyperlinkedModelSerializer
 from snippets.models import Snippet
-from g_context.handles import stop_after, stop_before, \
-        handler_after, handler_before, resume
-from g_context.base import green_method, green_function, context
+
+from g_context.base import add_context
 from g_context.util import case
-from g_context._django.filter import Filter, qobj, qsfilter, apply, FilterMark
+from g_context._django.filter import Filter, apply, FilterMark
 import operator
 
 from qfilters import QFilter, QuerySetFilter
 from django.db.models.query import Q, QuerySet
 
-from declared import Mark, DeclaredMeta
+from declared import Mark, DeclaredMeta, declare
 
 class MyFilter(metaclass=DeclaredMeta):
 
@@ -25,12 +24,17 @@ class MyFilter(metaclass=DeclaredMeta):
 
     code = Q(code__contains='cod')
 
-    title = Q(title='titlu')
+    @declare(FilterMark)
+    def title(self):
+        return Q(title='titlu')
 
     # style = ~Q(style='friendly')
 
     result = apply(operator.and_)
 
+    def __init__(self):
+        self.process_declared()
 
-with context(MyFilter, {'queryset': Snippet.objects.all()}):
+
+with add_context(MyFilter(), {'queryset': Snippet.objects.all()}):
     print(Filter().filter())
