@@ -1,5 +1,5 @@
 from g_context.base import method, context
-from g_context.testing import TestCase
+from g_context.hooks import TestCase
 
 class A:
     x = 3
@@ -32,14 +32,3 @@ class T(TestCase):
 
         o = A()
         self.assertEqual(o.run(), 4)
-
-# @TestCaseBefore(B.walk, 'walking')
-# def f(case, obj):
-#     case.assertFalse(obj.__b__)
-
-# @TestCaseAfter(A.run, 'running A')
-# def g(case, a, _result_):
-#     case.assertNotEqual(_result_, 4)
-
-# o = A()
-# ss = o.run()

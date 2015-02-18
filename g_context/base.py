@@ -1,16 +1,16 @@
 from functools import wraps
 from contextlib import contextmanager
 
-from .util import Missing, ExplicitNone
+from .util import Missing, ExplicitNone, threadlocal
 
-from collections import Mapping, deque
-import threading
-
-import greenlet
+from collections import Mapping
+# import threading
 
 
+
+from .hooks import pre_hook, post_hook, Hook
 # threadlocal = threading.local()
-threadlocal = greenlet.getcurrent()
+
 
 
 def ContextAttr(name, default=Missing):
@@ -127,8 +127,6 @@ class ObjectsStack:
 
 
 context = threadlocal.context = ObjectsStack()
-threadlocal.hooks = deque()
-
 
 class ContextWrapper:
 
@@ -153,24 +151,24 @@ class ContextWrapper:
         if added:
             context.pop()
 
+
     def __call__(self, func):
         @wraps(func)
         def wrapper(*args, **kwargs):
             with self.as_manager(*args, **kwargs):
                 result = None
-                hooks = threadlocal.hooks
-                if hooks and hooks[-1] == (pre_hook, wrapper):
-                    result = hooks[-1].hook_func(*args, **kwargs)
-                    hooks.rotate(1)
+                hook = Hook.lookup((pre_hook, wrapper))
+                if hook:
+                    result = hook.execute(*args, **kwargs)
                 if result is None:
-                    # * our function *
+                    # * wrapped function *
                     result = func(*args, **kwargs)
-                    # * * * * * * *  *
+                    # * * * * *  * * * * *
                 elif result is ExplicitNone:
                     result = None
-                if hooks and hooks[-1] == (post_hook, wrapper):
-                    ret = hooks[-1].hook_func(*args, ret=result, **kwargs)
-                    hooks.rotate(1)
+                hook = Hook.lookup((post_hook, wrapper))
+                if hook:
+                    ret = hook.execute(*args, ret=result, **kwargs)
                     if ret is ExplicitNone:
                         result = None
                     elif ret is not None:
@@ -182,49 +180,3 @@ class ContextWrapper:
 
 function = ContextWrapper(None)
 method = ContextWrapper()
-
-
-class Hook:
-
-    def __init__(self, func, hook_func=None):
-        self.func = func
-        if hook_func:
-            self.hook_func = hook_func
-
-    def __repr__(self):
-        hook_type = {
-            pre_hook: 'pre',
-            post_hook: 'post',
-        }[self.type]
-        hook_name = self.hook_func.__name__ # FIXME can be any callable
-        return '%s: %s %s' % (hook_name, hook_type, self.func)
-
-    def __call__(self, hook_func):
-        self.hook_func = hook_func
-        return self
-
-    def __enter__(self):
-        threadlocal.hooks.append(self)
-
-    def __exit__(self, *exc):
-        if exc[0]:
-            raise exc[0].with_traceback(exc[1], exc[2])
-        threadlocal.hooks.remove(self)
-
-    def __hash__(self):
-        return hash((self.type, self.func))
-
-    def __eq__(self, other):
-        if isinstance(other, tuple):
-            return other == (self.type, self.func)
-        if isinstance(other, Hook):
-            return self.func is other.func and self.type is other.type
-
-
-class pre_hook(Hook):
-    pass
-pre_hook.type = pre_hook
-
-class post_hook(Hook):
-    pass
-post_hook.type = post_hook

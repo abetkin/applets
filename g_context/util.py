@@ -3,6 +3,10 @@ import collections
 import unittest
 import inspect
 
+import greenlet
+
+threadlocal = greenlet.getcurrent()
+
 class Missing:
     pass
 
