@@ -1,13 +1,12 @@
 # coding: utf-8
-from g_context.base import green_method, green_function
-from g_context import getcontext, context
-from g_context.handles import stop_before, stop_after, resume, resume_all
+from g_context.base import method, function, pre_hook, post_hook
+from g_context.base import context, add_context
 from g_context.util import case
 
 class A:
     a = 1
 
-    @green_method
+    @method
     def run(self):
         return B().run()
 
@@ -15,24 +14,22 @@ class A:
 class B:
     a= 54
 
-    @green_function
+    @method
     def run(self):
-        return getcontext()['a']
+        return context['a']
 
 
 o = A()
 case.assertEqual(o.run(), 1)
 
-with context({'a': 2}):
+with add_context({'a': 2}):
     case.assertEqual(B().run(), 2)
-    case.assertEqual(A().run(), 1)
 
+# stop_after(A.run)
+# stop_before(B.run)
 
-stop_after(A.run)
-stop_before(B.run)
-
-o = A()
-o.run()
-# case.assertEqual(resume(), 1)
-# case.assertEqual(resume(), 1)
-case.assertEqual(resume_all(), 1)
+# o = A()
+# o.run()
+# # case.assertEqual(resume(), 1)
+# # case.assertEqual(resume(), 1)
+# case.assertEqual(resume_all(), 1)

@@ -1,3 +1,2 @@
-import greenlet
 
-from .base import getcontext, context
+from .base import context
