@@ -1,36 +1,42 @@
 from g_context.util import case
-from g_context.base import green_method
-from g_context.handles import stop_before, stop_after
-from g_context import getcontext
+from g_context.base import method, pre_hook, post_hook
+from g_context import context
 
 class A:
     x = 3
 
-    @green_method
+    @method
     def run(self):
         return B().walk() + 1
 
 class B:
 
-    @green_method
+    @method
     def walk(self):
-        return getcontext()['x']
+        return context['x']
+
+
+class Kill(Exception):
+
+    def __init__(self, value):
+        self.value = value
 
 
 class C(A):
 
-    @green_method
+    @method
     def run(self):
-        with stop_after(A.run):
-            with stop_before(B.walk) as stopped:
-                b, = super().run()
-                stopped.kill()
-        return b
+        @post_hook(B.walk)
+        def stop(*args, ret=None):
+            raise Kill(ret)
+
+        with stop:
+            try:
+                super().run()
+            except Kill as e:
+                return e.value + 1
 
 
 o = C()
 res = o.run()
-case.assertIsInstance(res, B)
-
-
-# TODO check that handles are parent greenlets
+case.assertEqual(res, 4)

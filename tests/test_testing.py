@@ -1,11 +1,10 @@
-from g_context.base import green_method
-from g_context import getcontext
-from g_context.testing import TestCase, TestCaseAfter, TestCaseBefore
+from g_context.base import method, context
+from g_context.testing import TestCase
 
 class A:
     x = 3
 
-    @green_method
+    @method
     def run(self):
         return B().walk() + 1
 
@@ -14,9 +13,9 @@ class B:
     def __init__(self):
         self.__b__ = True
 
-    @green_method
+    @method
     def walk(self):
-        return getcontext()['x']
+        return context['x']
 
 
 class T(TestCase):
@@ -28,11 +27,11 @@ class T(TestCase):
             self.assertFalse(obj.__b__)
 
         @self.stop_after(A.run, 'running A')
-        def g(a, _result_):
-            self.assertNotEqual(_result_, 4)
+        def g(a, ret):
+            self.assertNotEqual(ret, 4)
 
         o = A()
-        ss = o.run()
+        self.assertEqual(o.run(), 4)
 
 # @TestCaseBefore(B.walk, 'walking')
 # def f(case, obj):

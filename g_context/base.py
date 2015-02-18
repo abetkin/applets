@@ -153,9 +153,9 @@ class ContextWrapper:
                     result = hooks[-1].hook_func(*args, **kwargs)
                     hooks.rotate(1)
                 if result is None:
-                    # *
+                    # * our function *
                     result = func(*args, **kwargs)
-                    # *
+                    # * * * * * * *  *
                 elif result is ExplicitNone:
                     result = None
                 if hooks and hooks[-1] == (post_hook, wrapper):
@@ -178,7 +178,8 @@ class Hook:
 
     def __init__(self, func, hook_func=None):
         self.func = func
-        self.hook_func = hook_func
+        if hook_func:
+            self.hook_func = hook_func
 
     def __repr__(self):
         hook_type = {
