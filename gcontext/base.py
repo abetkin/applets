@@ -15,7 +15,10 @@ def ContextAttr(name, default=Missing):
             return dic[name]
         if default is not Missing:
             return context.get(name, default)
-        return context[name]
+        try:
+            return context[name]
+        except KeyError:
+            raise AttributeError(name)
 
     def fset(self, value):
         dic[name] = value
