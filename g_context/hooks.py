@@ -39,8 +39,6 @@ class Hook:
         hooks_dict[self] = self
 
     def __exit__(self, *exc):
-        if exc and exc[0]:
-            raise exc[0].with_traceback(exc[1], exc[2])
         del hooks_dict[self]
 
     def __hash__(self):
@@ -72,8 +70,6 @@ class OrderedHook(Hook):
         hooks_deque.append(self)
 
     def __exit__(self, *exc):
-        if exc and exc[0]:
-            raise exc[0].with_traceback(exc[1], exc[2])
         hooks_deque.remove(self)
 
 
@@ -93,8 +89,7 @@ class TestCaseHook(OrderedHook):
     def hook_func(self, func):
         subtest = self.test_case.subTest(self._description)
         func = subtest(func)
-        # check
-        hooks_deque.appendleft(self) # add but don't make active
+        hooks_deque.appendleft(self) # add to another end
 
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -129,6 +124,7 @@ class Exit(Exception):
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
 
+
 class CriticalHook(Hook):
 
     def __init__(self, func):
@@ -140,7 +136,7 @@ class CriticalHook(Hook):
         return self.error
 
     def __exit__(self, *exc):
-        super().__exit__()
+        super().__exit__(*exc)
         if exc and issubclass(exc[0], Exit):
             return True
 
@@ -153,6 +149,7 @@ class exit_before(CriticalHook):
         self.error.args = args
         self.error.kwargs = kwargs
         raise self.error
+
 
 class exit_after(CriticalHook):
 
