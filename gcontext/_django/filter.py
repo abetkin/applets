@@ -4,24 +4,15 @@ from gcontext import method, function, ContextAttr
 
 
 from functools import reduce
-from qfilters import QFilter, QuerySetFilter
 
-from django.db.models.query import Q
+from django.db.models.query import Q, QuerySet
 
 class FilterMark(Mark):
 
     collect_into = '_declared_filters'
 
-    def build_me(self, marks, owner):
-        if isinstance(self, Q):
-            return QFilter(self)
-        return self
-
-
-qobj = FilterMark.register(QFilter)
-qsfilter = FilterMark.register(QuerySetFilter)
-
 FilterMark.register(Q)
+FilterMark.register(QuerySet)
 
 
 class apply(FilterMark):
@@ -30,26 +21,32 @@ class apply(FilterMark):
 
 
 class Filter:
-    filters = ContextAttr('_declared_filters')
+    _declared_filters = ContextAttr('_declared_filters')
     queryset = ContextAttr('queryset')
 
     def __init__(self, queryset=None):
+        self.results = {}
         if queryset is not None:
             self.queryset = queryset
 
     @method
     def filter(self):
-        accumulated = []
-        for name, obj in self.filters.items():
-            if isinstance(obj, apply):
-                self.filters[name] = reduce(obj.op, accumulated)
-                while accumulated:
-                    accumulated.pop().skip = True
-            else:
-                accumulated.append(obj)
-        self.results = OrderedDict()
+        filters = self._declared_filters
         queryset = self.queryset
-        for name, obj in self.filters.items():
-            if not getattr(obj, 'skip', None):
-                self.results[name] = queryset = obj(queryset)
+
+        accumulated = []
+        for name, obj in filters.items():
+            if not isinstance(obj, apply):
+                accumulated.append(obj)
+                assert isinstance(obj, (Q, QuerySet))
+                continue
+            qobjects = list(filter(lambda o: isinstance(o, Q), accumulated))
+            if qobjects:
+                for qobj in qobjects:
+                    accumulated.remove(qobj)
+                queryset = queryset.filter(reduce(obj.op, qobjects))
+            if accumulated:
+                accumulated.append(queryset)
+                queryset = reduce(obj.op, accumulated)
+            self.results[name] = queryset
         return queryset

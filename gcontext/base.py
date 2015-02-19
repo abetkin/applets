@@ -26,12 +26,14 @@ def ContextAttr(name, default=Missing):
 @contextmanager
 def add_context(*objects):
     added = 0
+    context = get_context()
     for obj in objects:
-        if get_context().push(obj):
+        if context.push(obj):
             added += 1
+    context.pending = False
     yield
     for i in range(added):
-        get_context().pop()
+        context.pop()
 
 
 @Mapping.register
@@ -115,24 +117,14 @@ class ObjectsStack:
 def get_context():
     return threadlocal().setdefault('context', ObjectsStack())
 
-class ContextWrapper:
+class GrabContextWrapper:
 
-    def __init__(self, instance_arg=0):
-        self.instance_arg = instance_arg
-
-    def _get_instance(self, *run_args, **run_kwargs):
-        if self.instance_arg is None:
-            return
-        try:
-            index = int(self.instance_arg)
-        except TypeError:
-            return run_kwargs[self.instance_arg]
-        else:
-            return run_args[index]
+    def __init__(self, get_context_object):
+        self.get_context_object = get_context_object
 
     @contextmanager
     def as_manager(self, *run_args, **run_kwargs):
-        instance = self._get_instance(*run_args, **run_kwargs)
+        instance = self.get_context_object(*run_args, **run_kwargs)
         added = get_context().push(instance)
         yield
         if added:
@@ -165,5 +157,10 @@ class ContextWrapper:
         return wrapper
 
 
-function = ContextWrapper(None)
-method = ContextWrapper()
+@GrabContextWrapper
+def function(*args, **kwargs):
+    return None
+
+@GrabContextWrapper
+def method(*args, **kwargs):
+    return args[0]
