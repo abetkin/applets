@@ -8,9 +8,8 @@ from rest_framework.test import APIClient
 from snippets.serializers import HyperlinkedModelSerializer
 from snippets.models import Snippet
 
-from g_context.base import add_context
-from g_context.util import case
-from g_context._django.filter import Filter, apply, FilterMark
+from gcontext import add_context
+from gcontext._django.filter import Filter, apply, FilterMark
 import operator
 
 from qfilters import QFilter, QuerySetFilter

@@ -1,28 +1,18 @@
 from functools import wraps
 from contextlib import contextmanager
+from collections import Mapping
 
 from .util import Missing, ExplicitNone, threadlocal
-
-from collections import Mapping
-# import threading
-
-
-
 from .hooks import pre_hook, post_hook, Hook
-# threadlocal = threading.local()
-
 
 
 def ContextAttr(name, default=Missing):
-
     dic = {}
 
-    def fget(self, context=context):
+    def fget(self):
+        context = get_context()
         if name in dic:
             return dic[name]
-        # if self in context.objects:
-        #     context = ObjectsStack(context.objects)
-        #     context.objects.remove(self)
         if default is not Missing:
             return context.get(name, default)
         return context[name]
@@ -35,17 +25,14 @@ def ContextAttr(name, default=Missing):
 
 @contextmanager
 def add_context(*objects):
-    context
     added = 0
     for obj in objects:
-        if context.push(obj):
+        if get_context().push(obj):
             added += 1
     yield
     for i in range(added):
-        context.pop()
+        get_context().pop()
 
-
-# TODO def replace_context() ?
 
 @Mapping.register
 class ObjectsStack:
@@ -125,8 +112,8 @@ class ObjectsStack:
     def pop(self):
         self._objects.pop(0)
 
-
-context = threadlocal.context = ObjectsStack()
+def get_context():
+    return threadlocal().setdefault('context', ObjectsStack())
 
 class ContextWrapper:
 
@@ -146,10 +133,10 @@ class ContextWrapper:
     @contextmanager
     def as_manager(self, *run_args, **run_kwargs):
         instance = self._get_instance(*run_args, **run_kwargs)
-        added = context.push(instance)
+        added = get_context().push(instance)
         yield
         if added:
-            context.pop()
+            get_context().pop()
 
 
     def __call__(self, func):

@@ -1,6 +1,6 @@
 from collections import OrderedDict
 from declared import Mark, DeclaredMeta
-from g_context.base import method, function, ContextAttr
+from gcontext import method, function, ContextAttr
 
 
 from functools import reduce

@@ -1,6 +1,6 @@
-from g_context.util import case
-from g_context.base import method, pre_hook, post_hook
-from g_context import context
+from util import case
+from gcontext.base import method, pre_hook, post_hook
+from gcontext import get_context
 
 class A:
     x = 3
@@ -13,7 +13,7 @@ class B:
 
     @method
     def walk(self):
-        return context['x']
+        return get_context()['x']
 
 
 class C(A):

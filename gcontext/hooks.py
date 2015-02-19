@@ -3,9 +3,6 @@ from functools import wraps
 from collections import deque
 from .util import  threadlocal, Missing
 
-hooks_deque = threadlocal.hooks_deque = deque()
-hooks_dict = threadlocal.hooks_dict = dict()
-
 class Hook:
 
     def __init__(self, func, hook_func=None):
@@ -14,11 +11,21 @@ class Hook:
             self.hook_func = hook_func
 
     @classmethod
+    def get_deque(cls):
+        return threadlocal().setdefault('hooks_deque', deque())
+
+    @classmethod
+    def get_dict(cls):
+        return threadlocal().setdefault('hooks_dict', dict())
+
+    @classmethod
     def lookup(cls, hook):
-        if hook in hooks_dict:
-            return hooks_dict[hook]
-        if hooks_deque and hook == hooks_deque[-1]:
-            return hooks_deque[-1]
+        _dict = cls.get_dict()
+        if hook in _dict:
+            return _dict[hook]
+        _deque = cls.get_deque()
+        if _deque and hook == _deque[-1]:
+            return _deque[-1]
 
     def __repr__(self):
         hook_type = {
@@ -36,10 +43,10 @@ class Hook:
         return self.hook_func(*args, **kwargs)
 
     def __enter__(self):
-        hooks_dict[self] = self
+        self.get_dict()[self] = self
 
     def __exit__(self, *exc):
-        del hooks_dict[self]
+        del self.get_dict()[self]
 
     def __hash__(self):
         return hash((self.type, self.func))
@@ -63,14 +70,14 @@ post_hook.type = post_hook
 class OrderedHook(Hook):
 
     def execute(self, *args, **kwargs):
-        hooks_deque.rotate(1)
+        self.get_deque().rotate(1)
         return self.hook_func(*args, **kwargs)
 
     def __enter__(self):
-        hooks_deque.append(self)
+        self.get_deque().append(self)
 
     def __exit__(self, *exc):
-        hooks_deque.remove(self)
+        self.get_deque().remove(self)
 
 
 class TestCaseHook(OrderedHook):
@@ -89,12 +96,12 @@ class TestCaseHook(OrderedHook):
     def hook_func(self, func):
         subtest = self.test_case.subTest(self._description)
         func = subtest(func)
-        hooks_deque.appendleft(self) # add to another end
+        self.get_deque().appendleft(self) # add to another end
 
         @wraps(func)
         def wrapper(*args, **kwargs):
             func(*args, **kwargs)
-            hooks_deque.remove(self)
+            self.get_deque().remove(self)
 
         self._hook_func = wrapper
 

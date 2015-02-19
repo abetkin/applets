@@ -1,5 +1,5 @@
-from g_context.base import method, context
-from g_context.hooks import TestCase
+from gcontext.base import method, get_context
+from gcontext.hooks import TestCase
 
 class A:
     x = 3
@@ -15,7 +15,7 @@ class B:
 
     @method
     def walk(self):
-        return context['x']
+        return get_context()['x']
 
 
 class T(TestCase):
