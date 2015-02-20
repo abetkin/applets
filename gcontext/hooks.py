@@ -1,9 +1,10 @@
 import unittest
 from functools import wraps
 from collections import deque
+from contextlib import ContextDecorator
 from .util import  threadlocal, Missing
 
-class Hook:
+class Hook(ContextDecorator):
 
     def __init__(self, func, hook_func=None):
         self.func = func

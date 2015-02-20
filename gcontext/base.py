@@ -118,10 +118,11 @@ class PendingObjectContext(ObjectsStack):
     @property
     def objects(self):
         return self._objects[1:] if self.pending else self._objects
-
+        # TODO why new list ?
 
 def get_context():
     return threadlocal().setdefault('context', PendingObjectContext())
+
 
 class GrabContextWrapper:
 
