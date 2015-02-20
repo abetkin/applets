@@ -12,7 +12,7 @@ class FilterMark(Mark):
     collect_into = '_declared_filters'
 
 FilterMark.register(Q)
-FilterMark.register(QuerySet)
+# FilterMark.register(QuerySet)
 
 
 class apply(FilterMark):

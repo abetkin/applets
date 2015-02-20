@@ -41,18 +41,15 @@ def add_context(*objects):
 
 @Mapping.register
 class ObjectsStack:
-
-    pending = None
-
     def __init__(self, objects=None):
         self._objects = objects or []
 
-    def __copy__(self):
-        return self.__class__(self.objects)
-
     @property
     def objects(self):
-        return self._objects[1:] if self.pending else self._objects
+        return self._objects
+
+    def __copy__(self):
+        return self.__class__(self.objects)
 
     def __repr__(self):
         return repr(self.objects)
@@ -100,25 +97,31 @@ class ObjectsStack:
 
     def __eq__(self, other):
         if isinstance(other, ObjectsStack):
-            return self._objects == other._objects \
-                    and bool(self.pending) == bool(other.pending)
+            return self.objects == other.objects
 
     def __ne__(self, other):
         return not (self == other)
 
     def push(self, obj):
-        if obj is not None and obj not in self.objects:
+        if obj is not None and obj not in self._objects:
             self._objects.insert(0, obj)
-            self.pending = True
-        else:
-            self.pending = False
-        return self.pending # the success of the operation
+            return True
 
     def pop(self):
         self._objects.pop(0)
 
+
+class PendingObjectContext(ObjectsStack):
+
+    pending = False
+
+    @property
+    def objects(self):
+        return self._objects[1:] if self.pending else self._objects
+
+
 def get_context():
-    return threadlocal().setdefault('context', ObjectsStack())
+    return threadlocal().setdefault('context', PendingObjectContext())
 
 class GrabContextWrapper:
 
@@ -127,11 +130,15 @@ class GrabContextWrapper:
 
     @contextmanager
     def as_manager(self, *run_args, **run_kwargs):
+        context = get_context()
+        was_pending = context.pending
         instance = self.get_context_object(*run_args, **run_kwargs)
-        added = get_context().push(instance)
+        added = get_context().push(instance) # whether was added successfully
+        context.pending = added
         yield
         if added:
-            get_context().pop()
+            context.pop()
+        context.pending = was_pending
 
 
     def __call__(self, func):
