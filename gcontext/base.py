@@ -1,6 +1,7 @@
 from functools import wraps
 from contextlib import contextmanager
 from collections import Mapping
+from copy import copy
 
 from .util import Missing, ExplicitNone, threadlocal
 from .hooks import pre_hook, post_hook, Hook
@@ -10,7 +11,7 @@ def ContextAttr(name, default=Missing):
     dic = {}
 
     def fget(self):
-        context = get_context()
+        context = get_context().parent
         if name in dic:
             return dic[name]
         if default is not Missing:
@@ -116,12 +117,17 @@ class PendingObjectContext(ObjectsStack):
     pending = False
 
     @property
-    def objects(self):
-        return self._objects[1:] if self.pending else self._objects
+    def parent(self):
+        if not self.pending:
+            return self
+        return self.__class__(tuple(self._objects[1:]))
         # TODO why new list ?
 
 def get_context():
     return threadlocal().setdefault('context', PendingObjectContext())
+
+def parent_context():
+    return get_context().parent
 
 
 class GrabContextWrapper:

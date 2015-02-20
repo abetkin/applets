@@ -1,6 +1,6 @@
 # coding: utf-8
-from gcontext.base import method, function, pre_hook, post_hook
-from gcontext.base import get_context, add_context
+from gcontext import method, function, pre_hook, post_hook
+from gcontext import get_context, add_context, ContextAttr
 from util import case
 
 class A:
@@ -16,7 +16,7 @@ class B:
 
     @method
     def run(self):
-        return get_context()['a']
+        return get_context().parent['a']
 
 o = A()
 case.assertEqual(o.run(), 1)
