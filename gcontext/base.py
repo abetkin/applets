@@ -1,4 +1,5 @@
 from functools import wraps
+from itertools import islice
 from contextlib import contextmanager
 from collections import Mapping
 from copy import copy
@@ -66,9 +67,6 @@ class ObjectsStack:
                 return getattr(obj, key)
             except (KeyError, AttributeError):
                 pass
-        return self.__missing__(key)
-
-    def __missing__(self, key):
         raise KeyError(key)
 
     def __setitem__(self, key, value):
@@ -120,14 +118,11 @@ class PendingObjectContext(ObjectsStack):
     def parent(self):
         if not self.pending:
             return self
-        return self.__class__(tuple(self._objects[1:]))
-        # TODO why new list ?
+        objects = tuple(islice(self.objects, 1, None))
+        return self.__class__(objects)
 
 def get_context():
     return threadlocal().setdefault('context', PendingObjectContext())
-
-def parent_context():
-    return get_context().parent
 
 
 class GrabContextWrapper:
