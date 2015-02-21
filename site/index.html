@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="The global context in use.">
+        
+        <link rel="canonical" href="http://abetkin.github.io/gcontext/">
+        <link rel="shortcut icon" href="./img/favicon.ico">
+
+        <title>gcontext</title>
+
+        <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="./css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link href="./css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="./css/highlight.css">
+        <link href="./css/extra.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body class="homepage">
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+
+            <!-- Main title -->
+            <a class="navbar-brand" href=".">gcontext</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="examples/">Examples</a>
+                    </li>
+                
+                
+                </ul>
+            
+
+            
+            <!-- Search, Navigation and Repo links -->
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+                <li class="disabled">
+                    <a rel="next" >
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </a>
+                </li>
+                <li >
+                    <a rel="prev" href="examples/">
+                        Next <i class="fa fa-arrow-right"></i>
+                    </a>
+                </li>
+                
+                
+                <li>
+                    <a href="https://github.com/abetkin/gcontext">
+                        
+                            <i class="fa fa-github"></i>
+                        
+                        GitHub
+                    </a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#gcontext">gcontext</a></li>
+        
+            <li><a href="#overview">Overview</a></li>
+        
+            <li><a href="#the-global-context">The "global" context</a></li>
+        
+            <li><a href="#examples">Examples</a></li>
+        
+            <li><a href="#pre-and-post-execution-hooks">Pre- and post-execution hooks</a></li>
+        
+    
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h1 id="gcontext">gcontext</h1>
+<p>The global context in use.</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>The goal of <code>gcontext</code> is to illustrate the concept of a <strong>global context</strong> (actually, threadlocal).</p>
+<p>The idea of using threadlocals is not new
+(e.g. <code>flask</code> has them), new is the way to use them. Actually, two ways: firstly, global "nested" context is used for <strong>attribute lookup</strong>.
+Secondly, it allows <strong>setting pre- and post-execution hooks dynamically</strong> for the respectively decorated callables.</p>
+<p>Besides being an illustration, the package aims to be 100% tested and production-ready (this part is not true yet). </p>
+<p>Though the concept is not related to web, I see it's application mostly there. Why?
+Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
+that are the handlers for different urls and usually are called views. That callables usually are greatly isolated from each other,
+and in most cases this is for the better. Also usually development process results in adding new urls, not modifying the logic of existing ones. This makes those handlers-views some kind of "throw-away" code. Of course, it's not the only thing specific to web development.</p>
+<p>The author's personal experience with web development is
+as a developer of the backend API with <code>django</code> and <code>django-rest-framework</code>. Speaking of the latter, many times I found the heavy
+Tom Christie's framework staying in my way and felt that something is wrong with it. Although the declarative approach is sometimes
+very neat. Not that I chose wrong tools: I have used other frameworks too. And speaking of <code>django</code>, it is very nice, I like it.
+(Well, with the except for it's testing facilities. Again, they try to enforce logic-heavy "good practises" when it's a throw-away type of activity:
+testing). </p>
+<p>The codebase is <strong>very small</strong> (~300 SLOC), so there will be no API reference, just the narrative documentation.</p>
+<hr />
+<h2 id="the-global-context">The "global" context</h2>
+<p>There is a "global" context object that represents a stack of objects. It is global in
+sense that it is a threadlocal, i.e. is global to a thread. Now, we'll use that object as
+a mapping: an attribute is looked up in the objects starting from the top of the stack.</p>
+<p>That object will be called the context and can be retrieved with <code>gcontext.get_context()</code></p>
+<p>The objects are pushed and popped from the stack with the help of context managers,
+of which the simplest is <code>add_context</code>: it just pushes (temporarily) objects in the context:</p>
+<pre><code>import gcontext as g
+
+@g.add_context({'name': 'John'})
+def hello():
+    print('Hello %s' % g.get_context()['name'])
+</code></pre>
+<p>The package also provides decorators for callables (methods in the most typical case)
+that can push into the context their arguments (usually we are interested in the bound instance).
+These decorators are instances of <code>GrabContextWrapper</code> and use internally the
+context manager similar to <code>add_context</code>. Let's see <code>method</code> decorator in action:</p>
+<pre><code>class Parent:
+    def __init__(self, params):
+        self.params = params
+
+    @g.method
+    def do_smth(self):
+        return Child().will_do_this()
+
+class Child:
+    def will_do_this(self):
+        print('I can use %s' % g.get_context()['params'])
+</code></pre>
+<p>Now child can access parent attributes from the context. <code>Parent</code> instances, however,
+also see in the context their own attributes - not very
+good: it's an unneeded namespace pollution. That's why there exists the notion of
+parent context. The logic behind this is simple: the last added element
+remains pending until the next entering in such context manager.</p>
+<p>Actually, the parent context is what you get with <code>get_context</code>. So, the code above will not
+work:</p>
+<pre><code class="python">&gt;&gt;&gt; Parent('some data'}).do_smth()
+Key Error: 'params'
+</code></pre>
+
+<p>That's because <code>will_do_this</code> is on the the same context "nesting level" as <code>do_smth</code>.
+Let's make the child method execute in the child context:</p>
+<pre><code>class Child:
+
+    @g.method
+    def will_do_this(self):
+        print('I can use %s' % g.get_context()['params'])
+
+&gt;&gt;&gt; Parent('parameters'}).do_smth()
+I can use parameters
+</code></pre>
+<p>The context namespace doesn't get polluted, e.g. you can write:</p>
+<pre><code>class Child:
+    @property
+    def params(self):
+        return g.get_context()['params'])
+</code></pre>
+<p>Though <code>params</code> property accesses <code>params</code> attribute from context, you don't get the "recursion depth exceeded" error.
+Actually, the package provides a
+convenience function <code>ContextAttr</code> that returns a property:</p>
+<pre><code class="python">params = g.ContextAttr('params')
+</code></pre>
+
+<p>The property is writable, but the written value won't reflect in the context.
+The context is read-only (as a mapping).</p>
+<hr />
+<h2 id="examples">Examples</h2>
+<p>I really wanted to illustrate it firstly with non-web example, but it turned out to be a little longer than I expected.
+You can find it in the <strong><a href="examples/">Examples</a></strong> section (it goes first).</p>
+<p>The first example will be from the non-web domain. Let's take a look at the <code>unittest</code> package.</p>
+<p>The second example is regarding <a href="http://www.django-rest-framework.org/">django-rest-framework</a>. Surprisingly, 
+its serialization utilities also use a context. It is a dictionary that logically nested objects pass to each other's <code>__init__</code>
+method. For example, the <code>request</code> object is looked up in the context when it's needed.
+What if we could just feed it our context?</p>
+<pre><code>class MySerializer(serializers.Serializer):
+    _context = property(lambda self: g.get_context(),
+                        lambda self, value: None)
+</code></pre>
+<p>And it works just like magic. The implied result from this is that you can use serializers just if
+there were <code>serialize()</code> and <code>deserialize()</code> functions.
+You only define fields with a class because it's less verbose than with an <code>OrderedDict</code>.
+Logically it's a function (of course, in the assumption that we decided to make <code>request</code> object "global").</p>
+<p>Let's make those functions:</p>
+<pre><code>class SerializerError(Exception):
+    pass
+
+_context = property(lambda self: g.get_context(), lambda self, value: None)
+
+class ListSerializer(serializers.ListSerializer):
+    _context = _context
+
+class MySerializer(serializers.Serializer):
+    _context = _context
+
+    @classmethod
+    def serialize(cls, obj=None):
+        if obj is None:
+            obj = get_context()['object']
+        serializer = cls(obj)
+        capture = g.method.as_manager # adds the first passed argument to context
+        with capture(serializer):
+            return serializer.data
+
+    @classmethod
+    def deserialize(cls, data=None):
+        if data is None:
+            data = get_context()['request'].QUERY_PARAMS
+        serializer = cls(data=data)
+        capture = g.method.as_manager
+        with capture(serializer):
+            if serializer.is_valid():
+                return serializer.data
+            raise SerializerError(serializer.errors)
+
+    class Meta:
+        list_serializer_class = ListSerializer
+</code></pre>
+<p>Actually, capturing the serializer instance with <code>g.method.as_manager</code> is not required. I just noticed
+that logically nested into the serializer objects (like fields) have that <code>parent</code> attribute. Now they can access parent from the context.     <br />
+That is the interface I would like to see for serialization: the two classmethods above.</p>
+<hr />
+<h2 id="pre-and-post-execution-hooks">Pre- and post-execution hooks</h2>
+</div>
+            
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            
+            <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+
+        
+
+        <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+        <script src="./js/bootstrap-3.0.3.min.js"></script>
+        <script src="./js/prettify-1.0.min.js"></script>
+        <script src="./js/highlight.pack.js"></script>
+        <script src="./js/base.js"></script>
+    </body>
+</html>
