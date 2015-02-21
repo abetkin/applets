@@ -12,7 +12,7 @@ def ContextAttr(name, default=Missing):
     dic = {}
 
     def fget(self):
-        context = get_context().parent
+        context = get_context()
         if name in dic:
             return dic[name]
         if default is not Missing:
@@ -31,7 +31,7 @@ def ContextAttr(name, default=Missing):
 @contextmanager
 def add_context(*objects):
     added = 0
-    context = get_context()
+    context = _raw_context()
     for obj in objects:
         if context.push(obj):
             added += 1
@@ -121,8 +121,14 @@ class PendingObjectContext(ObjectsStack):
         objects = tuple(islice(self.objects, 1, None))
         return self.__class__(objects)
 
-def get_context():
+def _raw_context():
     return threadlocal().setdefault('context', PendingObjectContext())
+
+def get_context():
+    '''
+    Return parent context.
+    '''
+    return _raw_context().parent
 
 
 class GrabContextWrapper:
@@ -132,10 +138,10 @@ class GrabContextWrapper:
 
     @contextmanager
     def as_manager(self, *run_args, **run_kwargs):
-        context = get_context()
+        context = _raw_context()
         was_pending = context.pending
         instance = self.get_context_object(*run_args, **run_kwargs)
-        added = get_context().push(instance) # whether was added successfully
+        added = context.push(instance) # whether was added successfully
         context.pending = added
         yield
         if added:
