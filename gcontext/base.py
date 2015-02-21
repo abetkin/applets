@@ -118,8 +118,8 @@ class PendingObjectContext(ObjectsStack):
     def parent(self):
         if not self.pending:
             return self
-        objects = tuple(islice(self.objects, 1, None))
-        return self.__class__(objects)
+        objects = islice(self.objects, 1, None)
+        return self.__class__(tuple(objects))
 
 def _raw_context():
     return threadlocal().setdefault('context', PendingObjectContext())
