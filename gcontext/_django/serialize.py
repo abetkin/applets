@@ -5,13 +5,15 @@ from rest_framework.serializers import Field, Serializer, \
     ModelSerializer
 from rest_framework import serializers
 
+_context = property(lambda self: get_context(), lambda self, value: None)
+
 def serializer_class(baseclass):
 
     class ListSerializer(serializers.ListSerializer):
-        _context = ContextDict('request')
+        _context = _context
 
     class Serializer(baseclass):
-        _context = ContextDict('request')
+        _context = _context
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
@@ -33,19 +35,6 @@ def deserialize(data=None, klass=Serializer):
     if s.is_valid():
         return s.data
     raise Exception(s.errors)
-
-def ContextDict(*keys):
-    dic = {}
-
-    def fget(self, ):
-        if not dic:
-            for key in keys:
-                dic[key] = get_context()[key]
-        return dic
-
-    def fset(self, value):
-        pass
-    return property(fget, fset)
 
 
 @function
