@@ -111,7 +111,7 @@
         
             <li><a href="#pre-and-post-execution-hooks">Pre- and post-execution hooks</a></li>
         
-            <li><a href="#a-new-kind-of-browsable-interface">A new kind of "browsable interface"</a></li>
+            <li><a href="#a-new-kind-of-the-browsable-interface">A new kind of the "browsable interface"</a></li>
         
     
     </ul>
@@ -130,7 +130,7 @@ Secondly - for <strong>setting dynamically pre- and post-execution hooks</strong
 <p>Though the concept is not related to web, I see it's application mostly there. Why?      <br />
 Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
 that are the handlers for different urls and usually are called views. That callables usually are greatly isolated from each other,
-and in the most cases this is for the better. Also, usually development process results in adding new urls, not modifying the logic of existing ones.
+and in most cases this is for the better. Also, usually the development process results in adding new urls, not modifying the logic of existing ones.
 This makes those handlers-views some kind of "throw-away" code.</p>
 <p>The author's personal experience with web development is
 as a developer of backend API with <code>django</code> and <code>django-rest-framework</code>. Speaking of the latter, many times I found the heavy
@@ -219,7 +219,7 @@ The context is read-only (as a mapping).</p>
 <p>I really wanted to illustrate it first with a non-web example, and I have found one.
 Only it turned out to be a little longer than I expected, so I will not place it here. The <strong><a href="examples/#subTest">example</a></strong> is available from the Examples section.</p>
 <hr />
-<p>The second example is regarding <a href="http://www.django-rest-framework.org/">django-rest-framework</a>. Surprisingly, 
+<p>The second example is regarding the <a href="http://www.django-rest-framework.org/">django-rest-framework</a>. Surprisingly, 
 its serialization utilities also use a context. It is a dictionary that logically nested objects pass to each other's <code>__init__</code>
 method. For example, the <code>request</code> object is looked up in the context when it's needed.
 What if we could just feed it our context?</p>
@@ -260,7 +260,7 @@ class MySerializer(serializers.Serializer):
 <p>Actually, capturing the serializer instance with <code>g.method.as_manager</code> is not required. I just noticed
 that logically nested into the serializer objects (like fields) have that <code>parent</code> attribute. Now they can access parent from the context.     <br />
 That is the interface I would like to see for serialization: the two classmethods above.</p>
-<p>There is also full-blown <strong><a href="examples/#rest_framework">example</a></strong> in the Examples section.</p>
+<p>There is also a fully-blown <strong><a href="examples/#rest_framework">example</a></strong> in the Examples section.</p>
 <hr />
 <h2 id="benefits-for-the-interactivity">Benefits for the interactivity</h2>
 <p>Being able to provide context to methods makes possible using from the interactive shell objects that
@@ -357,16 +357,17 @@ class Test(g.TestCase):
 
         Chicken('yellow').lay_eggs()
 </code></pre>
-<p>This test fails when run with <code>unittest</code>: it complains that <code>_chicken</code> hook wasn't executed.
-Apparently, the actual order of things differs from the expected.. <code>stop_before</code> and <code>stop_after</code> are <code>unittest</code> subtests
+<p>This test fails when being run with <code>unittest</code>: it complains that <code>_chicken</code> hook hadn't been executed.
+Apparently, the actual order of things differs from the expected...          <br />
+<code>stop_before</code> and <code>stop_after</code> are <code>unittest</code> subtests
 (regular ones, if you've read the first example, forget it).</p>
 <p><em>Note:</em> Dynamic hooks are a powerful mechanism, that, of course, was not designed just to define (statically) pre- and post-execution
-logic. You can do that with usual wrappers (or with inheritance). Still, they are absolutely usable for that purposes:</p>
+logic. You can do that with usual wrappers, or with inheritance. Still, they are absolutely usable for that purposes:</p>
 <pre><code class="python">with post_hook(func, hook_func):
     main()
 </code></pre>
 
-<p>You can also regard those hooks as breakpoints that can be used not only for debugging. Indeed, such hooks can 
+<p>You can also regard those hooks as breakpoints that can be used not only for debugging. Indeed, they can 
 raise an exception and pass any data with it. <code>g.exit_before</code> and <code>g.exit_after</code> are the examples of those:</p>
 <pre><code class="python">with g.exit_after(some_callable) as exc:
     some_scenario()
@@ -390,7 +391,7 @@ Although, there hasn't been (yet) any work done in <code>gcontext</code> regardi
 &gt;&gt;&gt; print('Unit %s returned %s ' % (ex.args[0], ex.ret))
 </code></pre>
 <p>And for the final words..</p>
-<h2 id="a-new-kind-of-browsable-interface">A new kind of "browsable interface"</h2>
+<h2 id="a-new-kind-of-the-browsable-interface">A new kind of the "browsable interface"</h2>
 <p>What is written below is just some food for thought, it doesn't have any specific implementation in <code>gcontext</code>.</p>
 <p>Probably, you know this feature of <code>django-rest-framework</code>, that is called "browsable interface". Except for some introspecting capabilities
 like extracting docstrings, it acts like a <code>curl</code>-like tool with a web interface. But, unlike <code>curl</code>-like tools, since that browsable interface logic was mixed into the framework's
