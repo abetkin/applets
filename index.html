@@ -107,7 +107,7 @@
         
             <li><a href="#examples">Examples</a></li>
         
-            <li><a href="#interactive-benefits">Interactive benefits</a></li>
+            <li><a href="#benefits-for-the-interactivity">Benefits for the interactivity</a></li>
         
             <li><a href="#pre-and-post-execution-hooks">Pre- and post-execution hooks</a></li>
         
@@ -124,13 +124,14 @@
 <h2 id="overview">Overview</h2>
 <p>The goal of <code>gcontext</code> is to illustrate the concept of a <strong>global context</strong> (actually, threadlocal).</p>
 <p>The idea of using threadlocals is not new
-(e.g. <code>flask</code> has them), new is the way to use them. Actually, there are two ways: firstly, the global "nested" context can be used for <strong>attribute lookup</strong>.
-Secondly, it allows <strong>setting pre- and post-execution hooks dynamically</strong> for the respectively decorated callables.</p>
+(e.g. <code>flask</code> has them), new is the way to use them. <code>gcontext</code> uses it in two ways: firstly, the global "nested" context can be used for <strong>attribute lookup</strong>.
+Secondly - for <strong>setting dynamically pre- and post-execution hooks</strong> for the respectively decorated callables.</p>
 <p>Besides being an illustration, the package aims to be 100% tested and production-ready (this part is not true yet). </p>
 <p>Though the concept is not related to web, I see it's application mostly there. Why?      <br />
 Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
 that are the handlers for different urls and usually are called views. That callables usually are greatly isolated from each other,
-and in the most cases this is for the better. Also, usually development process results in adding new urls, not modifying the logic of existing ones. This makes those handlers-views some kind of "throw-away" code.</p>
+and in the most cases this is for the better. Also, usually development process results in adding new urls, not modifying the logic of existing ones.
+This makes those handlers-views some kind of "throw-away" code.</p>
 <p>The author's personal experience with web development is
 as a developer of backend API with <code>django</code> and <code>django-rest-framework</code>. Speaking of the latter, many times I found the heavy
 Tom Christie's framework staying in my way and felt that something is wrong with it. Although the declarative approach is sometimes
@@ -139,7 +140,7 @@ very neat. Not that I chose wrong tools: I have used other frameworks too. And s
 testing). </p>
 <hr />
 <p><strong>Resuming:</strong> The most examples and the motivation belong to the web development, but the concept itself does not.
-Also the first example does not refer to web.</p>
+Also, the first example does not relate to web.</p>
 <p>The codebase is <strong>very small</strong> (~300 SLOC), so there will be no API reference, just the narrative documentation.</p>
 <hr />
 <h2 id="the-global-context">The "global" context</h2>
@@ -205,7 +206,7 @@ I can use parameters
     def params(self):
         return g.get_context()['params'])
 </code></pre>
-<p>Though <code>params</code> property accesses <code>params</code> attribute from context, you don't get the "recursion depth exceeded" error.
+<p>Though <code>params</code> property accesses the <code>params</code> attribute from context, you don't get the "recursion depth exceeded" error.
 Actually, the package provides a
 convenience function <code>ContextAttr</code> that returns a property:</p>
 <pre><code class="python">params = g.ContextAttr('params')
@@ -261,8 +262,8 @@ that logically nested into the serializer objects (like fields) have that <code>
 That is the interface I would like to see for serialization: the two classmethods above.</p>
 <p>There is also full-blown <strong><a href="examples/#rest_framework">example</a></strong> in the Examples section.</p>
 <hr />
-<h2 id="interactive-benefits">Interactive benefits</h2>
-<p>Being able to provide context to methods makes possible using from the interactive shell objects
+<h2 id="benefits-for-the-interactivity">Benefits for the interactivity</h2>
+<p>Being able to provide context to methods makes possible using from the interactive shell objects that
 you couldn't before. You are not required to depend on the request object:</p>
 <pre><code>class Aclass:
     request = g.ContextAttr('request', None)
@@ -273,25 +274,25 @@ you couldn't before. You are not required to depend on the request object:</p>
             return g.get_context()['request_data']
         return self.request.QUERY_PARAMS
 </code></pre>
-<p>And then you can do</p>
+<p>And then you can write:</p>
 <pre><code class="python">with g.add_context({'request_data': {'name': 'John',
                                      'age': '30'}}):
     # ...
 
 </code></pre>
 
-<p>I think, it is unnecessary to say this makes the testing easier, because it allows running units isolated
+<p>I think, it is unnecessary to say this makes the testing easier, because it allows running the units isolated
 from each other. </p>
 <hr />
 <h2 id="pre-and-post-execution-hooks">Pre- and post-execution hooks</h2>
-<p>We have reached to the second feature of <code>gcontext</code>: one can decorate a function and make it aware of pre- and post-hooks.</p>
-<p>Now before the execution callable will check the threadlocal context and if there is a hook it will execute it, the
+<p>We have reached to the second feature of <code>gcontext</code>: one can decorate a function and make it aware of the pre- and post-execution hooks.</p>
+<p>Now, before the execution, callable will check the threadlocal context and if there is a hook it will execute it, the
 same will it do after the execution. Those hooks have access to the function arguments and (for post-hooks) the result value.
-If hook's returned value is not <code>None</code>, it overwrites the value returned by the wrapped callable. If a pre-hook returns such a value, the original
-callable does not get executed.</p>
-<p>The important detail: those decorators that make callables aware of pre- and post-hooks, are the ones that push callable's
-attributes into the context: <code>GrabContextWrapper</code> instances like <code>g.method</code>. That is because the methods that provide context
-for others, are usually more important than others. Therefore it's likely we would want to set hooks for them, and there is no
+If hook's returned value is not <code>None</code>, it will overwrite the value returned by the wrapped callable. If a pre-hook returns such a value, the original
+the original callable won't get executed.</p>
+<p>Now, the point: those decorators that make callables aware of pre- and post-hooks, and the ones that push callable's
+attributes into the context - are the same thing: <code>GrabContextWrapper</code> instances like <code>g.method</code>. The reason for that is the methods that provide context
+to others, are usually more important than others - the ones that we likely would want to set hooks for, therefore there is no
 need for two decorators.</p>
 <p>Let's see an example:</p>
 <pre><code>from itertools import count, islice
@@ -333,7 +334,7 @@ class Egg:
     __init__ = g.function(object.__init__)
 
 class Chicken:
-
+    @g.function
     def __init__(self, color):
         self.color = color
 
@@ -350,17 +351,17 @@ class Test(g.TestCase):
             pass
 
         @self.stop_after(Chicken.__init__, 'Waiting for a chicken')
-        def _chicken(chicken, ret):
+        def _chicken(chicken, color, ret=None):
             '%s chicken' % chicken.color
             self.assertIs(ret, None)
 
         Chicken('yellow').lay_eggs()
 </code></pre>
 <p>This test fails when run with <code>unittest</code>: it complains that <code>_chicken</code> hook wasn't executed.
-Apparently, the actual order of things differs from the expected. <code>stop_before</code> and <code>stop_after</code> are <code>unittest</code> subtests
+Apparently, the actual order of things differs from the expected.. <code>stop_before</code> and <code>stop_after</code> are <code>unittest</code> subtests
 (regular ones, if you've read the first example, forget it).</p>
 <p><em>Note:</em> Dynamic hooks are a powerful mechanism, that, of course, were not designed just to define (statically) pre- and post-execution
-logic. You can do that with usual wrappers (or with inheritance). Still they are absolutely usable for that purposes:</p>
+logic. You can do that with usual wrappers (or with inheritance). Still, they are absolutely usable for that purposes:</p>
 <pre><code class="python">with post_hook(func, hook_func):
     main()
 </code></pre>
@@ -371,11 +372,11 @@ raise an exception and pass any data with it. <code>g.exit_before</code> and <co
     some_scenario()
 # exc.ret is the callable's return value
 # exc.args and exc.kwargs are the arguments
-send_scenario_other_way()
+send_scenario_the_other_way()
 </code></pre>
 
 <p>What is the motivation behind this?</p>
-<p>The idea is to make some functions "special", in the most cases those are methods, bound to their instances. 
+<p>The idea is to make some functions "special". In the most cases they are methods, bound to their instances. 
 Suppose such instance with the respective method being a logical unit of the application, or of an url handler - view, if speaking about web applications.
 The examples of such units may be authorization, serialization, filtering. 
 In <code>django-rest-framework</code> all these are represented with instances of separate classes, so kind of are regarded as separate units anyway.</p>
@@ -390,15 +391,17 @@ But for now you can write:</p>
 <p>And for the final words..</p>
 <h2 id="a-new-kind-of-browsable-interface">A new kind of "browsable interface"</h2>
 <p>What is written below is just some food for thought, it doesn't have any specific implementation in <code>gcontext</code>.</p>
-<p>Probably, you know this feature of <code>django-rest-interface</code>, that is called "browsable interface". Except for some introspecting capabilities
-like extracting docstrings it acts like a <code>curl</code> with a web interface. But, unlike <code>curl</code>-like tools, since that browsable interface logic was mixed into the framework's
-base code, you could get an unrelated to the browsable interface functionality break because of it (that happened only once to me, still annoying).
+<p>Probably, you know this feature of <code>django-rest-framework</code>, that is called "browsable interface". Except for some introspecting capabilities
+like extracting docstrings, it acts like a <code>curl</code>-like tool with a web interface. But, unlike <code>curl</code>-like tools, since that browsable interface logic was mixed into the framework's
+base code, you could get an unrelated to the browsable interface functionality break because of it (that happened only once to me, still it was annoying).
 I didn't track in detail how much things changed with the 3.0 release, but as I understand, there were no fundamental changes.</p>
 <p>What if that "api browser" could browse to an url and a specific application unit (like <code>test_client</code> did in the snippet above), that contains heavy and the principal logic for that
 url? Yes, it will be a python object, so what? <a href="./www.ipython.org">ipython</a>, for example, has rich tools to interact with such objects from the
-web interface. I.e., such objects can have an html representation and hypothetically can be used not only by developers.</p>
-<p>Let me give a real life example. Suppose an API url has a complicated queryset filtering logic, with quite long specs defining the desired
-behavior. Besides that everything is trivial. I have a filtering class that does all the logic. As a developer I would like to have quick access to the instance of that class and it's methods from the interactive shell. That really would be a "big win".</p>
+web interface. I mean, such objects can have an html representation, and hypothetically can be used not only by developers.</p>
+<p>Let me give you a real life example. Suppose an API url has a complicated queryset filtering logic, with a quite long specs defining the desired
+behavior. Besides that everything is trivial. I have a filtering class that does all the logic.
+As a developer, I would like to have a quick access to the instance of that class, and to it's methods from the interactive shell.
+That would really be a "big win".</p>
 <p>In <code>django</code> we have the admin interface, that is built for the content managers (and other managers), but is used by everyone. Why not to have
 such a "developer interface" that hopefully some time will be usable by other people?</p>
 </div>

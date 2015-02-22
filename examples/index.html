@@ -173,11 +173,11 @@ context manager. It just reraises the last exception that will now be caught by
         return True
 </code></pre>
 <p>All subtests also push <code>{'testcase': self}</code> to make a hierarchy.</p>
-<p>Now, how is this <code>subTest</code> different from the original?                <br />
+<p>Now, how this <code>subTest</code> is different from the original?                <br />
 First, our subtests are nested,
 while in the original version they are not (we benefit from this fact only in <code>__str__</code> function).
-Also and they are not required to be accessed
-from the testcase instance, which allows to write things like</p>
+Also, they are not required to be accessed
+from the testcase instance, which allows us to write things like</p>
 <pre><code>class TC(TestCase):
 
     @subTest('a method')
@@ -186,7 +186,7 @@ from the testcase instance, which allows to write things like</p>
 
     def test(self):
         with subTest('hierarchy'):
-            with subTest('is honored'):
+            with subTest('is honoured'):
                 self.assertFalse(True)
         afunction()
         self.amethod()
