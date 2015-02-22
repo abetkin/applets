@@ -124,41 +124,45 @@
 <h2 id="overview">Overview</h2>
 <p>The goal of <code>gcontext</code> is to illustrate the concept of a <strong>global context</strong> (actually, threadlocal).</p>
 <p>The idea of using threadlocals is not new
-(e.g. <code>flask</code> has them), new is the way to use them. Actually, two ways: firstly, global "nested" context is used for <strong>attribute lookup</strong>.
+(e.g. <code>flask</code> has them), new is the way to use them. Actually, there are two ways: firstly, the global "nested" context can be used for <strong>attribute lookup</strong>.
 Secondly, it allows <strong>setting pre- and post-execution hooks dynamically</strong> for the respectively decorated callables.</p>
 <p>Besides being an illustration, the package aims to be 100% tested and production-ready (this part is not true yet). </p>
-<p>Though the concept is not related to web, I see it's application mostly there. Why?
+<p>Though the concept is not related to web, I see it's application mostly there. Why?      <br />
 Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
 that are the handlers for different urls and usually are called views. That callables usually are greatly isolated from each other,
-and in most cases this is for the better. Also usually development process results in adding new urls, not modifying the logic of existing ones. This makes those handlers-views some kind of "throw-away" code.</p>
+and in the most cases this is for the better. Also, usually development process results in adding new urls, not modifying the logic of existing ones. This makes those handlers-views some kind of "throw-away" code.</p>
 <p>The author's personal experience with web development is
-as a developer of the backend API with <code>django</code> and <code>django-rest-framework</code>. Speaking of the latter, many times I found the heavy
+as a developer of backend API with <code>django</code> and <code>django-rest-framework</code>. Speaking of the latter, many times I found the heavy
 Tom Christie's framework staying in my way and felt that something is wrong with it. Although the declarative approach is sometimes
 very neat. Not that I chose wrong tools: I have used other frameworks too. And speaking of <code>django</code>, it is very nice, I like it.
 (Well, with the except for it's testing facilities. Again, they try to enforce logic-heavy "good practises" when it's a throw-away type of activity:
 testing). </p>
 <hr />
-<p><strong>Resuming:</strong> The most examples and the motivation belong to the web development, but the concept itself is not.
+<p><strong>Resuming:</strong> The most examples and the motivation belong to the web development, but the concept itself does not.
 Also the first example does not refer to web.</p>
 <p>The codebase is <strong>very small</strong> (~300 SLOC), so there will be no API reference, just the narrative documentation.</p>
 <hr />
 <h2 id="the-global-context">The "global" context</h2>
-<p>There is a "global" context object that represents a stack of objects. It is global in
-sense that it is a threadlocal, i.e. is global to a thread. Now, we'll use that object as
-a mapping: an attribute is looked up in the objects starting from the top of the stack.</p>
+<p>There is a "global" context object that represents a stack of objects. It is global in a
+sense that it is global to a thread, being actually a threadlocal. Now, we'll use that object as
+a mapping: we will look the attributes up in the stacked objects starting from the top of the stack.</p>
 <p>That object will be called the context and can be retrieved with <code>gcontext.get_context()</code></p>
 <p>The objects are pushed and popped from the stack with the help of context managers,
-of which the simplest is <code>add_context</code>: it just pushes (temporarily) objects in the context:</p>
+of which the simplest is <code>add_context</code>: it just pushes objects in the context for the time of execution
+of the decorated callable:</p>
 <pre><code>import gcontext as g
 
 @g.add_context({'name': 'John'})
 def hello():
-    print('Hello %s' % g.get_context()['name'])
+    print('Hello, %s' % g.get_context()['name'])
+
+&gt;&gt;&gt; hello()
+Hello, John
 </code></pre>
 <p>The package also provides decorators for callables (methods in the most typical case)
-that can push into the context their arguments (usually we are interested in the bound instance).
+that can push into the context their arguments (usually we are interested in the bound instance: the first positional argument).
 These decorators are instances of <code>GrabContextWrapper</code> and use internally the
-context manager similar to <code>add_context</code>. Let's see <code>method</code> decorator in action:</p>
+context manager similar to <code>add_context</code>. Let's see the <code>method</code> decorator in action:</p>
 <pre><code>class Parent:
     def __init__(self, params):
         self.params = params
@@ -171,12 +175,14 @@ class Child:
     def will_do_this(self):
         print('I can use %s' % g.get_context()['params'])
 </code></pre>
-<p>Now child can access parent attributes from the context. <code>Parent</code> instances, however,
-also see in the context their own attributes - not very
+<p>Now <code>Child</code> can access parent attributes from the context. <code>Parent</code> instances, however,
+also see in the context their own attributes. It's not very
 good: it's an unneeded namespace pollution. That's why there exists the notion of
-parent context. The logic behind this is simple: the last added element
+parent context. The logic behind it is simple: the last added element
 remains pending until the next entering in such context manager.</p>
-<p>Actually, the parent context is what you get with <code>get_context</code>. So, the code above will not
+<p>Actually, the parent context is what you get with <code>get_context</code>. The raw context can be retrieved
+with <code>g._raw_context()</code>.
+So, the code above will not
 work:</p>
 <pre><code class="python">&gt;&gt;&gt; Parent('some data'}).do_smth()
 Key Error: 'params'
@@ -193,7 +199,7 @@ Let's make the child method execute in the child context:</p>
 &gt;&gt;&gt; Parent('parameters'}).do_smth()
 I can use parameters
 </code></pre>
-<p>The context namespace doesn't get polluted, e.g. you can write:</p>
+<p>The context namespace doesn't get polluted, so you can safely write:</p>
 <pre><code>class Child:
     @property
     def params(self):
@@ -256,7 +262,7 @@ That is the interface I would like to see for serialization: the two classmethod
 <p>There is also full-blown <strong><a href="examples/#rest_framework">example</a></strong> in the Examples section.</p>
 <hr />
 <h2 id="interactive-benefits">Interactive benefits</h2>
-<p>Being able to provide context to methods makes possible to use from the interactive shell objects
+<p>Being able to provide context to methods makes possible using from the interactive shell objects
 you couldn't before. You are not required to depend on the request object:</p>
 <pre><code>class Aclass:
     request = g.ContextAttr('request', None)
@@ -278,14 +284,14 @@ you couldn't before. You are not required to depend on the request object:</p>
 from each other. </p>
 <hr />
 <h2 id="pre-and-post-execution-hooks">Pre- and post-execution hooks</h2>
-<p>We have reached to the second feature of <code>gcontext</code>: you can decorate a function and make it aware of pre- and post-hooks.
-Now before the execution callable will check the threadlocal context and if there is a hook it will execute it, the
+<p>We have reached to the second feature of <code>gcontext</code>: one can decorate a function and make it aware of pre- and post-hooks.</p>
+<p>Now before the execution callable will check the threadlocal context and if there is a hook it will execute it, the
 same will it do after the execution. Those hooks have access to the function arguments and (for post-hooks) the result value.
-If they return value, it overwrites the value returned by the wrapped callable. If a pre-hook returns a value, the original
+If hook's returned value is not <code>None</code>, it overwrites the value returned by the wrapped callable. If a pre-hook returns such a value, the original
 callable does not get executed.</p>
-<p>The important detail: that decorators that make callables aware of pre- and post-hooks, are the ones that push callable's
+<p>The important detail: those decorators that make callables aware of pre- and post-hooks, are the ones that push callable's
 attributes into the context: <code>GrabContextWrapper</code> instances like <code>g.method</code>. That is because the methods that provide context
-for others, are usually more important than others. So it's likely we would want to set hooks for them, so there is no
+for others, are usually more important than others. Therefore it's likely we would want to set hooks for them, and there is no
 need for two decorators.</p>
 <p>Let's see an example:</p>
 <pre><code>from itertools import count, islice
@@ -369,9 +375,12 @@ send_scenario_other_way()
 </code></pre>
 
 <p>What is the motivation behind this?</p>
-<p>The idea is to make some functions "special", in the most cases - methods, bound to their instances. Suppose such instance with the respective method being a logical unit of the application, or of an url handler - view, if speaking about web applications. The examples of such units may be authorization, serialization, filtering. In <code>django-rest-framework</code> all these are represented with instances of separate classes, so kind of are regarded as separate units anyway.</p>
+<p>The idea is to make some functions "special", in the most cases those are methods, bound to their instances. 
+Suppose such instance with the respective method being a logical unit of the application, or of an url handler - view, if speaking about web applications.
+The examples of such units may be authorization, serialization, filtering. 
+In <code>django-rest-framework</code> all these are represented with instances of separate classes, so kind of are regarded as separate units anyway.</p>
 <p>The hooks provide access to these "application units". <code>exit_*</code> hooks may be seen as some primitive form of interaction with them.
-Though there hasn't been in <code>gcontext</code> (yet) any work done regarding utilities for interactive work (using interactive python shells).
+Though there hasn't been in <code>gcontext</code> (yet) any work done regarding utilities for interactive work (using in the interactive python shells).
 But for now you can write:</p>
 <pre><code>with exit_after(InterestingUnit.main) as ex: 
     test_client.post('/some/url')
@@ -383,10 +392,11 @@ But for now you can write:</p>
 <p>What is written below is just some food for thought, it doesn't have any specific implementation in <code>gcontext</code>.</p>
 <p>Probably, you know this feature of <code>django-rest-interface</code>, that is called "browsable interface". Except for some introspecting capabilities
 like extracting docstrings it acts like a <code>curl</code> with a web interface. But, unlike <code>curl</code>-like tools, since that browsable interface logic was mixed into the framework's
-base code, you could get an unrelated to the browsable interface functionality break because of it (that happened only once to me, still annoying). I didn't track in detail how much things changed with the 3.0 release, but as I understand, there were no fundamental changes.</p>
+base code, you could get an unrelated to the browsable interface functionality break because of it (that happened only once to me, still annoying).
+I didn't track in detail how much things changed with the 3.0 release, but as I understand, there were no fundamental changes.</p>
 <p>What if that "api browser" could browse to an url and a specific application unit (like <code>test_client</code> did in the snippet above), that contains heavy and the principal logic for that
-url? It will be a python object, so what? <a href="./www.ipython.org">ipython</a>, for example, has rich tools to interact with such objects from the
-web interface. I.e., such objects can have an html representation and hypothetically be usable not only for developers.</p>
+url? Yes, it will be a python object, so what? <a href="./www.ipython.org">ipython</a>, for example, has rich tools to interact with such objects from the
+web interface. I.e., such objects can have an html representation and hypothetically can be used not only by developers.</p>
 <p>Let me give a real life example. Suppose an API url has a complicated queryset filtering logic, with quite long specs defining the desired
 behavior. Besides that everything is trivial. I have a filtering class that does all the logic. As a developer I would like to have quick access to the instance of that class and it's methods from the interactive shell. That really would be a "big win".</p>
 <p>In <code>django</code> we have the admin interface, that is built for the content managers (and other managers), but is used by everyone. Why not to have
