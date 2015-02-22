@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="The global context in use.">
+        
+        <link rel="canonical" href="http://abetkin.github.io/gcontext/">
+        <link rel="shortcut icon" href="./img/favicon.ico">
+
+        <title>gcontext</title>
+
+        <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="./css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link href="./css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="./css/highlight.css">
+        <link href="./css/extra.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body class="homepage">
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+
+            <!-- Main title -->
+            <a class="navbar-brand" href=".">gcontext</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="examples/">Examples</a>
+                    </li>
+                
+                
+                </ul>
+            
+
+            
+            <!-- Search, Navigation and Repo links -->
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+                <li class="disabled">
+                    <a rel="next" >
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </a>
+                </li>
+                <li >
+                    <a rel="prev" href="examples/">
+                        Next <i class="fa fa-arrow-right"></i>
+                    </a>
+                </li>
+                
+                
+                <li>
+                    <a href="https://github.com/abetkin/gcontext">
+                        
+                            <i class="fa fa-github"></i>
+                        
+                        GitHub
+                    </a>
+                </li>
+                
+            </ul>
+            
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#gcontext">gcontext</a></li>
+        
+            <li><a href="#overview">Overview</a></li>
+        
+            <li><a href="#the-global-context">The "global" context</a></li>
+        
+            <li><a href="#examples">Examples</a></li>
+        
+            <li><a href="#interactive-benefits">Interactive benefits</a></li>
+        
+            <li><a href="#pre-and-post-execution-hooks">Pre- and post-execution hooks</a></li>
+        
+            <li><a href="#a-new-kind-of-browsable-interface">A new kind of "browsable interface"</a></li>
+        
+    
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<h1 id="gcontext">gcontext</h1>
+<p>The global context in use.</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>The goal of <code>gcontext</code> is to illustrate the concept of a <strong>global context</strong> (actually, threadlocal).</p>
+<p>The idea of using threadlocals is not new
+(e.g. <code>flask</code> has them), new is the way to use them. Actually, two ways: firstly, global "nested" context is used for <strong>attribute lookup</strong>.
+Secondly, it allows <strong>setting pre- and post-execution hooks dynamically</strong> for the respectively decorated callables.</p>
+<p>Besides being an illustration, the package aims to be 100% tested and production-ready (this part is not true yet). </p>
+<p>Though the concept is not related to web, I see it's application mostly there. Why?
+Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
+that are the handlers for different urls and usually are called views. That callables usually are greatly isolated from each other,
+and in most cases this is for the better. Also usually development process results in adding new urls, not modifying the logic of existing ones. This makes those handlers-views some kind of "throw-away" code.</p>
+<p>The author's personal experience with web development is
+as a developer of the backend API with <code>django</code> and <code>django-rest-framework</code>. Speaking of the latter, many times I found the heavy
+Tom Christie's framework staying in my way and felt that something is wrong with it. Although the declarative approach is sometimes
+very neat. Not that I chose wrong tools: I have used other frameworks too. And speaking of <code>django</code>, it is very nice, I like it.
+(Well, with the except for it's testing facilities. Again, they try to enforce logic-heavy "good practises" when it's a throw-away type of activity:
+testing). </p>
+<hr />
+<p><strong>Resuming:</strong> The most examples and the motivation belong to the web development, but the concept itself is not.
+Also the first example does not refer to web.</p>
+<p>The codebase is <strong>very small</strong> (~300 SLOC), so there will be no API reference, just the narrative documentation.</p>
+<hr />
+<h2 id="the-global-context">The "global" context</h2>
+<p>There is a "global" context object that represents a stack of objects. It is global in
+sense that it is a threadlocal, i.e. is global to a thread. Now, we'll use that object as
+a mapping: an attribute is looked up in the objects starting from the top of the stack.</p>
+<p>That object will be called the context and can be retrieved with <code>gcontext.get_context()</code></p>
+<p>The objects are pushed and popped from the stack with the help of context managers,
+of which the simplest is <code>add_context</code>: it just pushes (temporarily) objects in the context:</p>
+<pre><code>import gcontext as g
+
+@g.add_context({'name': 'John'})
+def hello():
+    print('Hello %s' % g.get_context()['name'])
+</code></pre>
+<p>The package also provides decorators for callables (methods in the most typical case)
+that can push into the context their arguments (usually we are interested in the bound instance).
+These decorators are instances of <code>GrabContextWrapper</code> and use internally the
+context manager similar to <code>add_context</code>. Let's see <code>method</code> decorator in action:</p>
+<pre><code>class Parent:
+    def __init__(self, params):
+        self.params = params
+
+    @g.method
+    def do_smth(self):
+        return Child().will_do_this()
+
+class Child:
+    def will_do_this(self):
+        print('I can use %s' % g.get_context()['params'])
+</code></pre>
+<p>Now child can access parent attributes from the context. <code>Parent</code> instances, however,
+also see in the context their own attributes - not very
+good: it's an unneeded namespace pollution. That's why there exists the notion of
+parent context. The logic behind this is simple: the last added element
+remains pending until the next entering in such context manager.</p>
+<p>Actually, the parent context is what you get with <code>get_context</code>. So, the code above will not
+work:</p>
+<pre><code class="python">&gt;&gt;&gt; Parent('some data'}).do_smth()
+Key Error: 'params'
+</code></pre>
+
+<p>That's because <code>will_do_this</code> is on the the same context "nesting level" as <code>do_smth</code>.
+Let's make the child method execute in the child context:</p>
+<pre><code>class Child:
+
+    @g.method
+    def will_do_this(self):
+        print('I can use %s' % g.get_context()['params'])
+
+&gt;&gt;&gt; Parent('parameters'}).do_smth()
+I can use parameters
+</code></pre>
+<p>The context namespace doesn't get polluted, e.g. you can write:</p>
+<pre><code>class Child:
+    @property
+    def params(self):
+        return g.get_context()['params'])
+</code></pre>
+<p>Though <code>params</code> property accesses <code>params</code> attribute from context, you don't get the "recursion depth exceeded" error.
+Actually, the package provides a
+convenience function <code>ContextAttr</code> that returns a property:</p>
+<pre><code class="python">params = g.ContextAttr('params')
+</code></pre>
+
+<p>The property is writable, but the written value won't reflect in the context.
+The context is read-only (as a mapping).</p>
+<hr />
+<h2 id="examples">Examples</h2>
+<p>I really wanted to illustrate it first with a non-web example, and I have found one.
+Only it turned out to be a little longer than I expected, so I will not place it here. The <strong><a href="examples/#subTest">example</a></strong> is available from the Examples section.</p>
+<hr />
+<p>The second example is regarding <a href="http://www.django-rest-framework.org/">django-rest-framework</a>. Surprisingly, 
+its serialization utilities also use a context. It is a dictionary that logically nested objects pass to each other's <code>__init__</code>
+method. For example, the <code>request</code> object is looked up in the context when it's needed.
+What if we could just feed it our context?</p>
+<pre><code>class MySerializer(serializers.Serializer):
+    _context = property(lambda self: g.get_context(),
+                        lambda self, value: None)
+</code></pre>
+<p>And it works like magic. The implied result from this is that you can use serializers just if
+there were <code>serialize()</code> and <code>deserialize()</code> functions.
+You only define fields with a class because it's less verbose than with an <code>OrderedDict</code>.
+Logically it's a function (of course, assuming that we decided to add <code>request</code> to "global" context).</p>
+<p>Let's make those functions:</p>
+<pre><code>class SerializerError(Exception):
+    pass
+
+class MySerializer(serializers.Serializer):
+
+    @classmethod
+    def serialize(cls, obj=None):
+        if obj is None:
+            obj = get_context()['object']
+        serializer = cls(obj)
+        capture = g.method.as_manager # adds the first passed argument to context
+        with capture(serializer):
+            return serializer.data
+
+    @classmethod
+    def deserialize(cls, data=None):
+        if data is None:
+            data = get_context()['request'].QUERY_PARAMS
+        serializer = cls(data=data)
+        capture = g.method.as_manager
+        with capture(serializer):
+            if serializer.is_valid():
+                return serializer.data
+            raise SerializerError(serializer.errors)
+</code></pre>
+<p>Actually, capturing the serializer instance with <code>g.method.as_manager</code> is not required. I just noticed
+that logically nested into the serializer objects (like fields) have that <code>parent</code> attribute. Now they can access parent from the context.     <br />
+That is the interface I would like to see for serialization: the two classmethods above.</p>
+<p>There is also full-blown <strong><a href="examples/#rest_framework">example</a></strong> in the Examples section.</p>
+<hr />
+<h2 id="interactive-benefits">Interactive benefits</h2>
+<p>Being able to provide context to methods makes possible to use from the interactive shell objects
+you couldn't before. You are not required to depend on the request object:</p>
+<pre><code>class Aclass:
+    request = g.ContextAttr('request', None)
+
+    @property
+    def data(self):
+        if self.request is None:
+            return g.get_context()['request_data']
+        return self.request.QUERY_PARAMS
+</code></pre>
+<p>And then you can do</p>
+<pre><code class="python">with g.add_context({'request_data': {'name': 'John',
+                                     'age': '30'}}):
+    # ...
+
+</code></pre>
+
+<p>I think, it is unnecessary to say this makes the testing easier, because it allows running units isolated
+from each other. </p>
+<hr />
+<h2 id="pre-and-post-execution-hooks">Pre- and post-execution hooks</h2>
+<p>We have reached to the second feature of <code>gcontext</code>: you can decorate a function and make it aware of pre- and post-hooks.
+Now before the execution callable will check the threadlocal context and if there is a hook it will execute it, the
+same will it do after the execution. Those hooks have access to the function arguments and (for post-hooks) the result value.
+If they return value, it overwrites the value returned by the wrapped callable. If a pre-hook returns a value, the original
+callable does not get executed.</p>
+<p>The important detail: that decorators that make callables aware of pre- and post-hooks, are the ones that push callable's
+attributes into the context: <code>GrabContextWrapper</code> instances like <code>g.method</code>. That is because the methods that provide context
+for others, are usually more important than others. So it's likely we would want to set hooks for them, so there is no
+need for two decorators.</p>
+<p>Let's see an example:</p>
+<pre><code>from itertools import count, islice
+import gcontext as g
+
+class Counter:
+
+    def __init__(self):
+        self._counter = islice(count(), 10)
+
+    def __iter__(self):
+        return self
+
+    @g.function
+    def __next__(self):
+        return next(self._counter)
+
+
+def upper_bound(value):
+    @g.post_hook(Counter.__next__)
+    def hook(counter, ret):
+        return ret % value
+    return hook
+
+with upper_bound(5):
+    for i in Counter():
+        print(i)
+</code></pre>
+<p>It prints numbers from 0 to 4 and then once again. Note that we've decorated <code>__next__</code> with <code>g.function</code>
+so it will add nothing to context, but we could use <code>g.method</code> as well.</p>
+<p><code>gcontext</code> knows about two types of hooks: <strong>unordered</strong> and <strong>ordered</strong> ones. By default hooks are unordered and are maintained with a dict.
+But sometimes you want to force their order: for example, in a testcase hooks may represent just some assertions and you want an error to be raised
+if the test hooks order differs from the expected.</p>
+<p>An example for this:</p>
+<pre><code>from random import randint
+import gcontext as g
+
+class Egg:
+    __init__ = g.function(object.__init__)
+
+class Chicken:
+
+    def __init__(self, color):
+        self.color = color
+
+    def lay_eggs(self):
+        return [Egg() for i in range(randint(1, 4))]
+
+
+class Test(g.TestCase):
+
+    def test(self):
+
+        @self.stop_before(Egg.__init__, 'Waiting for an egg')
+        def _egg(egg):
+            pass
+
+        @self.stop_after(Chicken.__init__, 'Waiting for a chicken')
+        def _chicken(chicken, ret):
+            '%s chicken' % chicken.color
+            self.assertIs(ret, None)
+
+        Chicken('yellow').lay_eggs()
+</code></pre>
+<p>This test fails when run with <code>unittest</code>: it complains that <code>_chicken</code> hook wasn't executed.
+Apparently, the actual order of things differs from the expected. <code>stop_before</code> and <code>stop_after</code> are <code>unittest</code> subtests
+(regular ones, if you've read the first example, forget it).</p>
+<p><em>Note:</em> Dynamic hooks are a powerful mechanism, that, of course, were not designed just to define (statically) pre- and post-execution
+logic. You can do that with usual wrappers (or with inheritance). Still they are absolutely usable for that purposes:</p>
+<pre><code class="python">with post_hook(func, hook_func):
+    main()
+</code></pre>
+
+<p>You can also regard those hooks as breakpoints that can be used not only for debugging. Indeed, such hooks can 
+raise an exception and pass any data with it. <code>g.exit_before</code> and <code>g.exit_after</code> are the examples of those:</p>
+<pre><code class="python">with g.exit_after(some_callable) as exc:
+    some_scenario()
+# exc.ret is the callable's return value
+# exc.args and exc.kwargs are the arguments
+send_scenario_other_way()
+</code></pre>
+
+<p>What is the motivation behind this?</p>
+<p>The idea is to make some functions "special", in the most cases - methods, bound to their instances. Suppose such instance with the respective method being a logical unit of the application, or of an url handler - view, if speaking about web applications. The examples of such units may be authorization, serialization, filtering. In <code>django-rest-framework</code> all these are represented with instances of separate classes, so kind of are regarded as separate units anyway.</p>
+<p>The hooks provide access to these "application units". <code>exit_*</code> hooks may be seen as some primitive form of interaction with them.
+Though there hasn't been in <code>gcontext</code> (yet) any work done regarding utilities for interactive work (using interactive python shells).
+But for now you can write:</p>
+<pre><code>with exit_after(InterestingUnit.main) as ex: 
+    test_client.post('/some/url')
+
+&gt;&gt;&gt; print('Unit %s returned %s ' % (ex.args[0], ex.ret))
+</code></pre>
+<p>And for the final words..</p>
+<h2 id="a-new-kind-of-browsable-interface">A new kind of "browsable interface"</h2>
+<p>What is written below is just some food for thought, it doesn't have any specific implementation in <code>gcontext</code>.</p>
+<p>Probably, you know this feature of <code>django-rest-interface</code>, that is called "browsable interface". Except for some introspecting capabilities
+like extracting docstrings it acts like a <code>curl</code> with a web interface. But, unlike <code>curl</code>-like tools, since that browsable interface logic was mixed into the framework's
+base code, you could get an unrelated to the browsable interface functionality break because of it (that happened only once to me, still annoying). I didn't track in detail how much things changed with the 3.0 release, but as I understand, there were no fundamental changes.</p>
+<p>What if that "api browser" could browse to an url and a specific application unit (like <code>test_client</code> did in the snippet above), that contains heavy and the principal logic for that
+url? It will be a python object, so what? <a href="./www.ipython.org">ipython</a>, for example, has rich tools to interact with such objects from the
+web interface. I.e., such objects can have an html representation and hypothetically be usable not only for developers.</p>
+<p>Let me give a real life example. Suppose an API url has a complicated queryset filtering logic, with quite long specs defining the desired
+behavior. Besides that everything is trivial. I have a filtering class that does all the logic. As a developer I would like to have quick access to the instance of that class and it's methods from the interactive shell. That really would be a "big win".</p>
+<p>In <code>django</code> we have the admin interface, that is built for the content managers (and other managers), but is used by everyone. Why not to have
+such a "developer interface" that hopefully some time will be usable by other people?</p>
+</div>
+            
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            
+            <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+
+        
+
+        <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+        <script src="./js/bootstrap-3.0.3.min.js"></script>
+        <script src="./js/prettify-1.0.min.js"></script>
+        <script src="./js/highlight.pack.js"></script>
+        <script src="./js/base.js"></script>
+    </body>
+</html>
