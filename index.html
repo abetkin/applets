@@ -127,8 +127,8 @@
 (e.g. <code>flask</code> has them), new is the way to use them. <code>gcontext</code> uses it in two ways: firstly, the global "nested" context can be used for <strong>attribute lookup</strong>.
 Secondly - for <strong>setting dynamically pre- and post-execution hooks</strong> for the respectively decorated callables.</p>
 <p>Besides being an illustration, the package aims to be 100% tested and production-ready (this part is not true yet). </p>
-<p>Though the concept is not related to web, I see it's application mostly there. Why?      <br />
-Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
+<p>Though the concept is not related to web, I see it's application mostly there. Why?</p>
+<p>Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
 that are the handlers for different urls and usually are called views. That callables usually are greatly isolated from each other,
 and in most cases this is for the better. Also, usually the development process results in adding new urls, not modifying the logic of existing ones.
 This makes those handlers-views some kind of "throw-away" code.</p>
