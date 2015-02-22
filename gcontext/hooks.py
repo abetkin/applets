@@ -125,6 +125,13 @@ class TestCase(unittest.TestCase):
     stop_before = SubTest(pre_hook)
     stop_after = SubTest(post_hook)
 
+    def tearDown(self, result=None):
+        hooks = filter(lambda h: isinstance(h, TestCaseHook),
+                        Hook.get_deque())
+        self.assertSequenceEqual(list(hooks), [], "There are unexecuted hooks")
+
+
+
 
 ## Exit hooks (raise Exception) ##
 
