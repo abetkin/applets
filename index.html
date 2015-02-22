@@ -107,7 +107,11 @@
         
             <li><a href="#examples">Examples</a></li>
         
+            <li><a href="#interactive-benefits">Interactive benefits</a></li>
+        
             <li><a href="#pre-and-post-execution-hooks">Pre- and post-execution hooks</a></li>
+        
+            <li><a href="#a-new-kind-of-browsable-interface">A new kind of "browsable interface"</a></li>
         
     
     </ul>
@@ -126,13 +130,16 @@ Secondly, it allows <strong>setting pre- and post-execution hooks dynamically</s
 <p>Though the concept is not related to web, I see it's application mostly there. Why?
 Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
 that are the handlers for different urls and usually are called views. That callables usually are greatly isolated from each other,
-and in most cases this is for the better. Also usually development process results in adding new urls, not modifying the logic of existing ones. This makes those handlers-views some kind of "throw-away" code. Of course, it's not the only thing specific to web development.</p>
+and in most cases this is for the better. Also usually development process results in adding new urls, not modifying the logic of existing ones. This makes those handlers-views some kind of "throw-away" code.</p>
 <p>The author's personal experience with web development is
 as a developer of the backend API with <code>django</code> and <code>django-rest-framework</code>. Speaking of the latter, many times I found the heavy
 Tom Christie's framework staying in my way and felt that something is wrong with it. Although the declarative approach is sometimes
 very neat. Not that I chose wrong tools: I have used other frameworks too. And speaking of <code>django</code>, it is very nice, I like it.
 (Well, with the except for it's testing facilities. Again, they try to enforce logic-heavy "good practises" when it's a throw-away type of activity:
 testing). </p>
+<hr />
+<p><strong>Resuming:</strong> The most examples and the motivation belong to the web development, but the concept itself is not.
+Also the first example does not refer to web.</p>
 <p>The codebase is <strong>very small</strong> (~300 SLOC), so there will be no API reference, just the narrative documentation.</p>
 <hr />
 <h2 id="the-global-context">The "global" context</h2>
@@ -202,9 +209,9 @@ convenience function <code>ContextAttr</code> that returns a property:</p>
 The context is read-only (as a mapping).</p>
 <hr />
 <h2 id="examples">Examples</h2>
-<p>I really wanted to illustrate it firstly with non-web example, but it turned out to be a little longer than I expected.
-You can find it in the <strong><a href="examples/">Examples</a></strong> section (it goes first).</p>
-<p>The first example will be from the non-web domain. Let's take a look at the <code>unittest</code> package.</p>
+<p>I really wanted to illustrate it first with a non-web example, and I have found one.
+Only it turned out to be a little longer than I expected, so I will not place it here. The <strong><a href="examples/#subTest">example</a></strong> is available from the Examples section.</p>
+<hr />
 <p>The second example is regarding <a href="http://www.django-rest-framework.org/">django-rest-framework</a>. Surprisingly, 
 its serialization utilities also use a context. It is a dictionary that logically nested objects pass to each other's <code>__init__</code>
 method. For example, the <code>request</code> object is looked up in the context when it's needed.
@@ -213,21 +220,15 @@ What if we could just feed it our context?</p>
     _context = property(lambda self: g.get_context(),
                         lambda self, value: None)
 </code></pre>
-<p>And it works just like magic. The implied result from this is that you can use serializers just if
+<p>And it works like magic. The implied result from this is that you can use serializers just if
 there were <code>serialize()</code> and <code>deserialize()</code> functions.
 You only define fields with a class because it's less verbose than with an <code>OrderedDict</code>.
-Logically it's a function (of course, in the assumption that we decided to make <code>request</code> object "global").</p>
+Logically it's a function (of course, assuming that we decided to add <code>request</code> to "global" context).</p>
 <p>Let's make those functions:</p>
 <pre><code>class SerializerError(Exception):
     pass
 
-_context = property(lambda self: g.get_context(), lambda self, value: None)
-
-class ListSerializer(serializers.ListSerializer):
-    _context = _context
-
 class MySerializer(serializers.Serializer):
-    _context = _context
 
     @classmethod
     def serialize(cls, obj=None):
@@ -248,15 +249,148 @@ class MySerializer(serializers.Serializer):
             if serializer.is_valid():
                 return serializer.data
             raise SerializerError(serializer.errors)
-
-    class Meta:
-        list_serializer_class = ListSerializer
 </code></pre>
 <p>Actually, capturing the serializer instance with <code>g.method.as_manager</code> is not required. I just noticed
 that logically nested into the serializer objects (like fields) have that <code>parent</code> attribute. Now they can access parent from the context.     <br />
 That is the interface I would like to see for serialization: the two classmethods above.</p>
+<p>There is also full-blown <strong><a href="examples/#rest_framework">example</a></strong> in the Examples section.</p>
+<hr />
+<h2 id="interactive-benefits">Interactive benefits</h2>
+<p>Being able to provide context to methods makes possible to use from the interactive shell objects
+you couldn't before. You are not required to depend on the request object:</p>
+<pre><code>class Aclass:
+    request = g.ContextAttr('request', None)
+
+    @property
+    def data(self):
+        if self.request is None:
+            return g.get_context()['request_data']
+        return self.request.QUERY_PARAMS
+</code></pre>
+<p>And then you can do</p>
+<pre><code class="python">with g.add_context({'request_data': {'name': 'John',
+                                     'age': '30'}}):
+    # ...
+
+</code></pre>
+
+<p>I think, it is unnecessary to say this makes the testing easier, because it allows running units isolated
+from each other. </p>
 <hr />
 <h2 id="pre-and-post-execution-hooks">Pre- and post-execution hooks</h2>
+<p>We have reached to the second feature of <code>gcontext</code>: you can decorate a function and make it aware of pre- and post-hooks.
+Now before the execution callable will check the threadlocal context and if there is a hook it will execute it, the
+same will it do after the execution. Those hooks have access to the function arguments and (for post-hooks) the result value.
+If they return value, it overwrites the value returned by the wrapped callable. If a pre-hook returns a value, the original
+callable does not get executed.</p>
+<p>The important detail: that decorators that make callables aware of pre- and post-hooks, are the ones that push callable's
+attributes into the context: <code>GrabContextWrapper</code> instances like <code>g.method</code>. That is because the methods that provide context
+for others, are usually more important than others. So it's likely we would want to set hooks for them, so there is no
+need for two decorators.</p>
+<p>Let's see an example:</p>
+<pre><code>from itertools import count, islice
+import gcontext as g
+
+class Counter:
+
+    def __init__(self):
+        self._counter = islice(count(), 10)
+
+    def __iter__(self):
+        return self
+
+    @g.function
+    def __next__(self):
+        return next(self._counter)
+
+
+def upper_bound(value):
+    @g.post_hook(Counter.__next__)
+    def hook(counter, ret):
+        return ret % value
+    return hook
+
+with upper_bound(5):
+    for i in Counter():
+        print(i)
+</code></pre>
+<p>It prints numbers from 0 to 4 and then once again. Note that we've decorated <code>__next__</code> with <code>g.function</code>
+so it will add nothing to context, but we could use <code>g.method</code> as well.</p>
+<p><code>gcontext</code> knows about two types of hooks: <strong>unordered</strong> and <strong>ordered</strong> ones. By default hooks are unordered and are maintained with a dict.
+But sometimes you want to force their order: for example, in a testcase hooks may represent just some assertions and you want an error to be raised
+if the test hooks order differs from the expected.</p>
+<p>An example for this:</p>
+<pre><code>from random import randint
+import gcontext as g
+
+class Egg:
+    __init__ = g.function(object.__init__)
+
+class Chicken:
+
+    def __init__(self, color):
+        self.color = color
+
+    def lay_eggs(self):
+        return [Egg() for i in range(randint(1, 4))]
+
+
+class Test(g.TestCase):
+
+    def test(self):
+
+        @self.stop_before(Egg.__init__, 'Waiting for an egg')
+        def _egg(egg):
+            pass
+
+        @self.stop_after(Chicken.__init__, 'Waiting for a chicken')
+        def _chicken(chicken, ret):
+            '%s chicken' % chicken.color
+            self.assertIs(ret, None)
+
+        Chicken('yellow').lay_eggs()
+</code></pre>
+<p>This test fails when run with <code>unittest</code>: it complains that <code>_chicken</code> hook wasn't executed.
+Apparently, the actual order of things differs from the expected. <code>stop_before</code> and <code>stop_after</code> are <code>unittest</code> subtests
+(regular ones, if you've read the first example, forget it).</p>
+<p><em>Note:</em> Dynamic hooks are a powerful mechanism, that, of course, were not designed just to define (statically) pre- and post-execution
+logic. You can do that with usual wrappers (or with inheritance). Still they are absolutely usable for that purposes:</p>
+<pre><code class="python">with post_hook(func, hook_func):
+    main()
+</code></pre>
+
+<p>You can also regard those hooks as breakpoints that can be used not only for debugging. Indeed, such hooks can 
+raise an exception and pass any data with it. <code>g.exit_before</code> and <code>g.exit_after</code> are the examples of those:</p>
+<pre><code class="python">with g.exit_after(some_callable) as exc:
+    some_scenario()
+# exc.ret is the callable's return value
+# exc.args and exc.kwargs are the arguments
+send_scenario_other_way()
+</code></pre>
+
+<p>What is the motivation behind this?</p>
+<p>The idea is to make some functions "special", in the most cases - methods, bound to their instances. Suppose such instance with the respective method being a logical unit of the application, or of an url handler - view, if speaking about web applications. The examples of such units may be authorization, serialization, filtering. In <code>django-rest-framework</code> all these are represented with instances of separate classes, so kind of are regarded as separate units anyway.</p>
+<p>The hooks provide access to these "application units". <code>exit_*</code> hooks may be seen as some primitive form of interaction with them.
+Though there hasn't been in <code>gcontext</code> (yet) any work done regarding utilities for interactive work (using interactive python shells).
+But for now you can write:</p>
+<pre><code>with exit_after(InterestingUnit.main) as ex: 
+    test_client.post('/some/url')
+
+&gt;&gt;&gt; print('Unit %s returned %s ' % (ex.args[0], ex.ret))
+</code></pre>
+<p>And for the final words..</p>
+<h2 id="a-new-kind-of-browsable-interface">A new kind of "browsable interface"</h2>
+<p>What is written below is just some food for thought, it doesn't have any specific implementation in <code>gcontext</code>.</p>
+<p>Probably, you know this feature of <code>django-rest-interface</code>, that is called "browsable interface". Except for some introspecting capabilities
+like extracting docstrings it acts like a <code>curl</code> with a web interface. But, unlike <code>curl</code>-like tools, since that browsable interface logic was mixed into the framework's
+base code, you could get an unrelated to the browsable interface functionality break because of it (that happened only once to me, still annoying). I didn't track in detail how much things changed with the 3.0 release, but as I understand, there were no fundamental changes.</p>
+<p>What if that "api browser" could browse to an url and a specific application unit (like <code>test_client</code> did in the snippet above), that contains heavy and the principal logic for that
+url? It will be a python object, so what? <a href="./www.ipython.org">ipython</a>, for example, has rich tools to interact with such objects from the
+web interface. I.e., such objects can have an html representation and hypothetically be usable not only for developers.</p>
+<p>Let me give a real life example. Suppose an API url has a complicated queryset filtering logic, with quite long specs defining the desired
+behavior. Besides that everything is trivial. I have a filtering class that does all the logic. As a developer I would like to have quick access to the instance of that class and it's methods from the interactive shell. That really would be a "big win".</p>
+<p>In <code>django</code> we have the admin interface, that is built for the content managers (and other managers), but is used by everyone. Why not to have
+such a "developer interface" that hopefully some time will be usable by other people?</p>
 </div>
             
         </div>

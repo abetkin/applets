@@ -112,11 +112,11 @@
 <p>The examples collection.</p>
 <hr />
 <h2 id="subtest">subTest</h2>
-<p>An example from the domain of application testing. In the standard
+<p>In the standard
 library there is nice <code>unittest</code> package. It used to have, however, two annoyingly missing features:
 running subtests and dropping into debugger on failures. Now there is only one since
-the first problem were successfully solved in 3.4 release.</p>
-<p>Lets be for a moment <code>unittest</code> authors and try to implement this "subtest" feature
+the first problem was successfully solved in 3.4 release.</p>
+<p>Lets try to implement this "subtest" feature
 using <code>gcontext</code>. For those who haven't read that part of <code>unittest</code> documentation,
 this is what the original looks like:</p>
 <pre><code>class MyTest(unittest.TestCase):
@@ -124,8 +124,7 @@ this is what the original looks like:</p>
         with self.subTest('this will fail'):
             self.assertTrue(False)
 </code></pre>
-<p>Here is the proposed solution. The tests are run with the result argument, that is
-created by a test runner. To make subtests use the same result their parent does
+<p>Here is the proposed solution. We want subtests to use the same test result their parent does so
 we push it into the context. Also we push <code>{'testcase': self}</code>: subtests should know
 their parents.</p>
 <pre><code>import gcontext as g
