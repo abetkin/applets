@@ -122,7 +122,7 @@
 <p>The global context in use.</p>
 <hr />
 <h2 id="overview">Overview</h2>
-<p>The goal of <code>gcontext</code> is to illustrate the concept of a <strong>global context</strong> (actually, threadlocal).</p>
+<p>The goal of <code>gcontext</code> is to illustrate the concept of a <strong>global context</strong> (actually, a threadlocal).</p>
 <p>The idea of using threadlocals is not new
 (e.g. <code>flask</code> has them), new is the way to use them. <code>gcontext</code> uses it in two ways: firstly, the global "nested" context can be used for <strong>attribute lookup</strong>.
 Secondly - for <strong>setting dynamically pre- and post-execution hooks</strong> for the respectively decorated callables.</p>
