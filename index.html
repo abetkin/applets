@@ -178,7 +178,7 @@ class Child:
 </code></pre>
 <p>Now <code>Child</code> can access parent attributes from the context. <code>Parent</code> instances, however,
 also see in the context their own attributes. It's not very
-good: it's an unneeded namespace pollution. That's why there exists the notion of
+good: it's an unneeded namespace pollution. That's why in <code>gcontext</code> there exists the notion of
 parent context. The logic behind it is simple: the last added element
 remains pending until the next entering in such context manager.</p>
 <p>Actually, the parent context is what you get with <code>get_context</code>. The raw context can be retrieved
@@ -208,7 +208,7 @@ I can use parameters
 </code></pre>
 <p>Though <code>params</code> property accesses the <code>params</code> attribute from context, you don't get the "recursion depth exceeded" error.
 Actually, the package provides a
-convenience function <code>ContextAttr</code> that returns a property:</p>
+convenience function for this - <code>ContextAttr</code>, that returns a property:</p>
 <pre><code class="python">params = g.ContextAttr('params')
 </code></pre>
 
@@ -230,7 +230,7 @@ What if we could just feed it our context?</p>
 <p>And it works like magic. The implied result from this is that you can use serializers just if
 there were <code>serialize()</code> and <code>deserialize()</code> functions.
 You only define fields with a class because it's less verbose than with an <code>OrderedDict</code>.
-Logically it's a function (of course, assuming that we decided to add <code>request</code> to "global" context).</p>
+Logically it's a function (of course, in the assumption that we decided to add <code>request</code> to "global" context).</p>
 <p>Let's make those functions:</p>
 <pre><code>class SerializerError(Exception):
     pass
@@ -360,7 +360,7 @@ class Test(g.TestCase):
 <p>This test fails when run with <code>unittest</code>: it complains that <code>_chicken</code> hook wasn't executed.
 Apparently, the actual order of things differs from the expected.. <code>stop_before</code> and <code>stop_after</code> are <code>unittest</code> subtests
 (regular ones, if you've read the first example, forget it).</p>
-<p><em>Note:</em> Dynamic hooks are a powerful mechanism, that, of course, were not designed just to define (statically) pre- and post-execution
+<p><em>Note:</em> Dynamic hooks are a powerful mechanism, that, of course, was not designed just to define (statically) pre- and post-execution
 logic. You can do that with usual wrappers (or with inheritance). Still, they are absolutely usable for that purposes:</p>
 <pre><code class="python">with post_hook(func, hook_func):
     main()
@@ -375,14 +375,15 @@ raise an exception and pass any data with it. <code>g.exit_before</code> and <co
 send_scenario_the_other_way()
 </code></pre>
 
-<p>What is the motivation behind this?</p>
+<p>What is the motivation behind all this?</p>
 <p>The idea is to make some functions "special". In the most cases they are methods, bound to their instances. 
-Suppose such instance with the respective method being a logical unit of the application, or of an url handler - view, if speaking about web applications.
+Suppose such an instance with the respective method to be a logical unit of an application (or of an url handler,
+if speaking about web applications).
 The examples of such units may be authorization, serialization, filtering. 
 In <code>django-rest-framework</code> all these are represented with instances of separate classes, so kind of are regarded as separate units anyway.</p>
 <p>The hooks provide access to these "application units". <code>exit_*</code> hooks may be seen as some primitive form of interaction with them.
-Though there hasn't been in <code>gcontext</code> (yet) any work done regarding utilities for interactive work (using in the interactive python shells).
-But for now you can write:</p>
+Although, there hasn't been (yet) any work done in <code>gcontext</code> regarding facilities for the interactive work (using in the interactive python shells).</p>
+<p>But for now you can write:</p>
 <pre><code>with exit_after(InterestingUnit.main) as ex: 
     test_client.post('/some/url')
 
