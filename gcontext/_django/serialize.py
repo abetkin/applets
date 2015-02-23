@@ -51,7 +51,13 @@ class field(Mark):
 
     collect_into = '_declared_fields'
 
-    def build_me(field, fields, owner):
+    @classmethod
+    def __subclasshook__(cls, C):
+        if issubclass(C, serializers.Field):
+            return True
+        return NotImplemented
+
+    def build(field, fields, owner):
         if isinstance(field, Field) and fields_separator in fields:
             sep = fields.index(fields_separator)
             read_only = fields.index(field) < sep
@@ -60,13 +66,13 @@ class field(Mark):
         return field
 
 
-field.register(Field)
+# field.register(Field)
 
 class FieldsSeparator(field):
     '''
     Separator between the read-only and write-only fields.
     '''
-    def build_me(field, fields, owner):
+    def build(field, fields, owner):
         raise SkipMark
 
 fields_separator = FieldsSeparator()

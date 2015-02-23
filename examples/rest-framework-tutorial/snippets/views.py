@@ -72,9 +72,8 @@ class MyFilter(Filter, DeclaredFields):
         self.process_declared()
 
 
-    CharField = field.register(serializers.CharField)
-    title = CharField()
-    code = CharField()
+    title = serializers.CharField()
+    code = serializers.CharField()
 
     @declare(FilterMark) # rename: Filter
     def qtitle(self):
