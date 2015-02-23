@@ -2,4 +2,5 @@
 
 **[Documentation.](http://abetkin.github.io/gcontext/)**
 
-![Деревня дураков. Курильщики](/smoke.jpg)
+![](/smoke.jpg)
+[TV show "Деревня дураков. Курильщики"](http://www.youtube.com/watch?v=wa1QUlcHe8o)
