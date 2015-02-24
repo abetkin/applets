@@ -135,7 +135,7 @@ web applications.</p>
 <p>The idea of using threadlocals is not new
 (<a href="http://flask.pocoo.org">flask</a> is a well-known example). New is the way (actually, two ways) to use them:</p>
 <h4 id="attribute-lookup">Attribute lookup</h4>
-<p>Instances chain that is formed by context is used for sequential attribute lookup. </p>
+<p>Instances chain that is formed by the global context is used for sequential attribute lookup. </p>
 <h4 id="dynamic-pre-and-post-execution-hooks">Dynamic pre- and post-execution hooks</h4>
 <p>Wrapped callables are supplemented with pre- and post-execution hooks that are looked in another global (threadlocal) object. </p>
 <hr />
@@ -143,7 +143,7 @@ web applications.</p>
 <hr />
 <h4 id="applied-to-web-development">Applied to web development</h4>
 <p>Though the concept is not related to web, I see it's application mostly there. Why?</p>
-<p>Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
+<p>The development of web applications has it's specifics. The code there is organized into functions (callables)
 that are the handlers for different urls and usually are called views. That callables usually are greatly isolated from each other,
 and in most cases this is for the better. Also, usually the development process results in adding new urls, not modifying the logic of existing ones.
 This makes those handlers-views some kind of "throw-away" code.</p>
@@ -152,8 +152,8 @@ as a developer of backend API with <code>django</code> and <code>django-rest-fra
 Tom Christie's framework staying in my way and felt that something is wrong with it. Although the declarative approach is sometimes
 very neat. Not that I chose wrong tools: I have used other frameworks too. And speaking of <code>django</code>, it is very nice, I like it.
 (Well, with the except for it's testing facilities. Again, they try to enforce logic-heavy "good practises" when it's a throw-away type of activity:
-testing).        <br />
-Still, I have this impression that objects aggregation can be done better and that having some kind of global context can make things easier.</p>
+testing).</p>
+<p>Still, I have this impression that objects aggregation can be done better and that having some kind of global context can make things easier.</p>
 <hr />
 <p>Warning: Only <strong>Python 3</strong> is supported yet.</p>
 <hr />
@@ -233,7 +233,7 @@ The context is read-only (as a mapping).</p>
 <hr />
 <h2 id="examples">Examples</h2>
 <p>I really wanted to illustrate it first with a non-web example, and I have found one.
-Only it turned out to be a little longer than I expected, so I will not place it here. The <strong><a href="examples/#subTest">example</a></strong> is available from the Examples section.</p>
+Only it turned out to be a little longer than I expected, so I will not place it here. It is <a href="examples/#subTest">available</a> from the Examples section.</p>
 <hr />
 <p>The second example is regarding the <a href="http://www.django-rest-framework.org/">django-rest-framework</a>. Surprisingly, 
 its serialization utilities also use a context. It is a dictionary that logically nested objects pass to each other's <code>__init__</code>
@@ -276,7 +276,8 @@ class MySerializer(serializers.Serializer):
 <p>Actually, capturing the serializer instance with <code>g.method.as_manager</code> is not required. I just noticed
 that logically nested into the serializer objects (like fields) have that <code>parent</code> attribute. Now they can access parent from the context.     <br />
 That is the interface I would like to see for serialization: the two classmethods above.</p>
-<p>There is also a fully-blown <strong><a href="examples/#rest_framework">example</a></strong> in the Examples section.</p>
+<p>There is a <a href="examples/#django-filters-enhanced">continuation</a>  to this in the Examples section:
+there you can find similar classes for filter declaration and the implementation of similar classmethods.</p>
 <hr />
 <h2 id="benefits-for-the-interactivity">Benefits for the interactivity</h2>
 <p>Being able to provide context to methods makes possible using from the interactive shell objects that
@@ -297,8 +298,11 @@ you couldn't before. You are not required to depend on the request object:</p>
 
 </code></pre>
 
-<p>I think, it is unnecessary to say this makes the testing easier, because it allows running the units isolated
-from each other. </p>
+<p>This can make the testing easier, because it allows running the units isolated
+from each other.</p>
+<p><strong>Note:</strong> The global context should be used with caution, without too much enthusiasm.
+If abused, it can make your code, inversely, hardly testable.
+The usual precautions for using global variables apply.</p>
 <hr />
 <h2 id="the-context-isolation">The context isolation</h2>
 <p>Though context modifying managers should guarantee the proper context cleanup even in case of errors,

@@ -109,6 +109,8 @@
         
             <li><a href="#subtest">subTest</a></li>
         
+            <li><a href="#django-filters-enhanced">"Django filters" enhanced</a></li>
+        
     
     </ul>
 </div></div>
@@ -205,7 +207,66 @@ def afunction():
     case().assertEqual(1 + 1, 2)
 </code></pre>
 <p><em>Note:</em> This is just an example, it doesn't have any real advantages for writing unit tests.</p>
-<hr /></div>
+<hr />
+<h2 id="django-filters-enhanced">"Django filters" enhanced</h2>
+<p>No, we won't fork django. It will be an "enhanced" version compared to <a href="http://abetkin.github.io/declared/examples/#django-filters">"Django Filters"</a>
+example from the <strong><a href="http://abetkin.github.io/declared/">declared</a></strong>
+package. Enhanced is put within the quotation marks because it can turn otherwise if used excessively without need.</p>
+<p>In "Django Filters" we have written base classes for filters declaration that can be nested. A filter there is a callable that takes
+iterable (a queryset) as a parameter and returns iterable. Let's modify that example, so that it will take queryset from the context
+if it's not specified:</p>
+<pre><code>@qsfilter.register
+class FiltersDeclaredMeta(DeclaredMeta, abc.ABCMeta):
+    def __repr__(cls):
+        return ', '.join(cls._declared_filters.keys())
+
+    objects = g.ContextAttr('queryset')
+</code></pre>
+<p>We have added <code>objects</code> property to the metaclass so it will be accessible from the filter's class.</p>
+<p>Now we can use it in filters' implementations:</p>
+<pre><code>class CascadeFilter(DeclaredFilters):
+    @classmethod
+    def filter(cls, objects=None):
+        if objects is None:
+            objects = cls.objects
+        for f in cls._declared_filters.values():
+            objects = f.filter(objects)
+        return objects
+
+class ReduceFilters(DeclaredFilters):
+    @classmethod
+    def filter(cls, objects=None):
+        if objects is None:
+            objects = cls.objects
+        filters = [f.filter(objects) for f in cls._declared_filters.values()]
+        if filters:
+            return reduce(cls.operation, filters)
+        return objects
+</code></pre>
+<p>Notice the fallback to <code>cls.objects</code> if the queryset wasn't passed.</p>
+<p>Actually, the queryset is less global than, say, the request object, so the property should not be used often.
+The ability to call such routines without arguments should be used in corner cases, when they are hardly accessible and
+the routine plays secondary, accesory role. Like in the example below:  </p>
+<pre><code>from declared import declare
+from django.db.models import Q
+
+class MyFilters(Filter):
+
+    class Fields(Serializer):
+        text = CharField()
+        title = CharField()
+
+    def __init__(self):
+        self.params = self.Fields.deserialize()
+        self.process_declared()
+
+    @declare()
+    def text(self):
+        return Q(text__icontains=self.params['text'])
+</code></pre>
+<p>We have used <code>Serializer</code> class to deserialize <code>Filter</code> arguments. It's very convenient that it's <code>deserialize</code> function can take no arguments.</p>
+<p>Likewise, filtering can play such auxiliary role somewhere else. And the ability to use <code>queryset</code> attribute set, say, on the view
+can be very convenient.</p></div>
             
         </div>
 
