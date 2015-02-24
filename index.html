@@ -9,7 +9,7 @@
         <link rel="canonical" href="http://abetkin.github.io/gcontext/">
         <link rel="shortcut icon" href="./img/favicon.ico">
 
-        <title>gcontext</title>
+	<title>gcontext</title>
 
         <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
         <link href="./css/font-awesome-4.0.3.css" rel="stylesheet">
@@ -52,6 +52,12 @@
             
                 <!-- Main navigation -->
                 <ul class="nav navbar-nav">
+                
+                
+                    <li class="active">
+                        <a href=".">Home</a>
+                    </li>
+                
                 
                 
                     <li >
@@ -109,9 +115,11 @@
         
             <li><a href="#benefits-for-the-interactivity">Benefits for the interactivity</a></li>
         
+            <li><a href="#the-context-isolation">The context isolation</a></li>
+        
             <li><a href="#pre-and-post-execution-hooks">Pre- and post-execution hooks</a></li>
         
-            <li><a href="#a-new-kind-of-the-browsable-interface">A new kind of the "browsable interface"</a></li>
+            <li><a href="#new-kind-of-browsable-api">New kind of "Browsable API"</a></li>
         
     
     </ul>
@@ -122,11 +130,18 @@
 <p>The global context in use.</p>
 <hr />
 <h2 id="overview">Overview</h2>
-<p>The goal of <code>gcontext</code> is to illustrate the concept of a <strong>global context</strong> (actually, a threadlocal).</p>
+<p><strong>gcontext</strong> is based on the idea of using the  <strong>threadlocal context</strong>, mostly to address the challenges of writing the traditional
+web applications.</p>
 <p>The idea of using threadlocals is not new
-(e.g. <code>flask</code> has them), new is the way to use them. <code>gcontext</code> uses it in two ways: firstly, the global "nested" context can be used for <strong>attribute lookup</strong>.
-Secondly - for <strong>setting dynamically pre- and post-execution hooks</strong> for the respectively decorated callables.</p>
-<p>Besides being an illustration, the package aims to be 100% tested and production-ready (this part is not true yet). </p>
+(<a href="http://flask.pocoo.org">flask</a> is a well-known example). New is the way (actually, two ways) to use them:</p>
+<h4 id="attribute-lookup">Attribute lookup</h4>
+<p>Instances chain that is formed by context is used for sequential attribute lookup. </p>
+<h4 id="dynamic-pre-and-post-execution-hooks">Dynamic pre- and post-execution hooks</h4>
+<p>Wrapped callables are supplemented with pre- and post-execution hooks that are looked in another global (threadlocal) object. </p>
+<hr />
+<p>Besides being an illustration, the package aims to be 100% tested and production-ready (this part is not true yet).</p>
+<hr />
+<h4 id="applied-to-web-development">Applied to web development</h4>
 <p>Though the concept is not related to web, I see it's application mostly there. Why?</p>
 <p>Well, the development of web applications has it's specifics. The code there is organized into functions (callables)
 that are the handlers for different urls and usually are called views. That callables usually are greatly isolated from each other,
@@ -137,16 +152,17 @@ as a developer of backend API with <code>django</code> and <code>django-rest-fra
 Tom Christie's framework staying in my way and felt that something is wrong with it. Although the declarative approach is sometimes
 very neat. Not that I chose wrong tools: I have used other frameworks too. And speaking of <code>django</code>, it is very nice, I like it.
 (Well, with the except for it's testing facilities. Again, they try to enforce logic-heavy "good practises" when it's a throw-away type of activity:
-testing). </p>
+testing).        <br />
+Still, I have this impression that objects aggregation can be done better and that having some kind of global context can make things easier.</p>
 <hr />
-<p><strong>Resuming:</strong> The most examples and the motivation belong to the web development, but the concept itself does not.
-Also, the first example does not relate to web.</p>
+<p>Warning: Only <strong>Python 3</strong> is supported yet.</p>
+<hr />
 <p>The codebase is <strong>very small</strong> (~300 SLOC), so there will be no API reference, just the narrative documentation.</p>
 <hr />
 <h2 id="the-global-context">The "global" context</h2>
 <p>There is a "global" context object that represents a stack of objects. It is global in a
-sense that it is global to a thread, being actually a threadlocal. Now, we'll use that object as
-a mapping: we will look the attributes up in the stacked objects starting from the top of the stack.</p>
+sense that it is global to a thread, being actually a threadlocal. Now, that object can be used as
+a mapping: an attribute is looked up in the objects stack sequentially starting from it's top.</p>
 <p>That object will be called the context and can be retrieved with <code>gcontext.get_context()</code></p>
 <p>The objects are pushed and popped from the stack with the help of context managers,
 of which the simplest is <code>add_context</code>: it just pushes objects in the context for the time of execution
@@ -179,7 +195,7 @@ class Child:
 <p>Now <code>Child</code> can access parent attributes from the context. <code>Parent</code> instances, however,
 also see in the context their own attributes. It's not very
 good: it's an unneeded namespace pollution. That's why in <code>gcontext</code> there exists the notion of
-parent context. The logic behind it is simple: the last added element
+<strong>parent context</strong>. The logic behind it is simple: the last added element
 remains pending until the next entering in such context manager.</p>
 <p>Actually, the parent context is what you get with <code>get_context</code>. The raw context can be retrieved
 with <code>g._raw_context()</code>.
@@ -284,6 +300,15 @@ you couldn't before. You are not required to depend on the request object:</p>
 <p>I think, it is unnecessary to say this makes the testing easier, because it allows running the units isolated
 from each other. </p>
 <hr />
+<h2 id="the-context-isolation">The context isolation</h2>
+<p>Though context modifying managers should guarantee the proper context cleanup even in case of errors,
+I think it's required, that, say, handling of two different http requests could be fundamentally isolated,
+i.e. would belong to different threadlocals. Speaking of http requests processing, they are usually executed
+either in separate threads or processes, so their contexts will be isolated.</p>
+<p>Threadlocals in <code>gcontext</code> internally rely on <a href="http://greenlet.readthedocs.org">greenlet</a>: <code>get_context()</code> calls
+<code>greenlet.getcurrent()</code> (that will return a different object for different threads).</p>
+<p>So, it's enough to execute code in two separate greenlets to garantee they have isolated contexts.</p>
+<hr />
 <h2 id="pre-and-post-execution-hooks">Pre- and post-execution hooks</h2>
 <p>We have reached to the second feature of <code>gcontext</code>: one can decorate a function and make it aware of the pre- and post-execution hooks.</p>
 <p>Now, before the execution, callable will check the threadlocal context and if there is a hook it will execute it, the
@@ -361,7 +386,7 @@ class Test(g.TestCase):
 Apparently, the actual order of things differs from the expected...          <br />
 <code>stop_before</code> and <code>stop_after</code> are <code>unittest</code> subtests
 (regular ones, if you've read the first example, forget it).</p>
-<p><em>Note:</em> Dynamic hooks are a powerful mechanism, that, of course, was not designed just to define (statically) pre- and post-execution
+<p><em>Note:</em> Dynamic hooks are a powerful mechanism, that, of course, was not designed just to define  pre- and post-execution
 logic. You can do that with usual wrappers, or with inheritance. Still, they are absolutely usable for that purposes:</p>
 <pre><code class="python">with post_hook(func, hook_func):
     main()
@@ -371,8 +396,7 @@ logic. You can do that with usual wrappers, or with inheritance. Still, they are
 raise an exception and pass any data with it. <code>g.exit_before</code> and <code>g.exit_after</code> are the examples of those:</p>
 <pre><code class="python">with g.exit_after(some_callable) as exc:
     some_scenario()
-# exc.ret is the callable's return value
-# exc.args and exc.kwargs are the arguments
+print('callable returned %s' % exc.ret)
 send_scenario_the_other_way()
 </code></pre>
 
@@ -390,23 +414,23 @@ Although, there hasn't been (yet) any work done in <code>gcontext</code> regardi
 
 &gt;&gt;&gt; print('Unit %s returned %s ' % (ex.args[0], ex.ret))
 </code></pre>
+<hr />
 <p>And for the final words..</p>
-<h2 id="a-new-kind-of-the-browsable-interface">A new kind of the "browsable interface"</h2>
+<h2 id="new-kind-of-browsable-api">New kind of "Browsable API"</h2>
 <p>What is written below is just some food for thought, it doesn't have any specific implementation in <code>gcontext</code>.</p>
-<p>Probably, you know this feature of <code>django-rest-framework</code>, that is called "browsable interface". Except for some introspecting capabilities
+<p>Probably, you know this <a href="http://www.django-rest-framework.org/topics/browsable-api/">feature</a> of <code>django-rest-framework</code>, that is called "browsable interface". Except for some introspecting capabilities
 like extracting docstrings, it acts like a <code>curl</code>-like tool with a web interface. But, unlike <code>curl</code>-like tools, since that browsable interface logic was mixed into the framework's
-base code, you could get an unrelated to the browsable interface functionality break because of it (that happened only once to me, still it was annoying).
+base code, hypothetically you can get an unrelated to the browsable interface functionality break because of it.
 I didn't track in detail how much things changed with the 3.0 release, but as I understand, there were no fundamental changes.</p>
 <p>What if that "api browser" could browse to an url and a specific application unit (like <code>test_client</code> did in the snippet above), that contains heavy and the principal logic for that
 url? Yes, it will be a python object, so what? <a href="./www.ipython.org">ipython</a>, for example, has rich tools to interact with such objects from the
-web interface. I mean, such objects can have an html representation, and hypothetically can be used not only by developers.</p>
+web interface. Such objects can have an html representation, be interacted with from javascript, and hypothetically can be usable not only for developers.</p>
 <p>Let me give you a real life example. Suppose an API url has a complicated queryset filtering logic, with a quite long specs defining the desired
 behavior. Besides that everything is trivial. I have a filtering class that does all the logic.
 As a developer, I would like to have a quick access to the instance of that class, and to it's methods from the interactive shell.
 That would really be a "big win".</p>
 <p>In <code>django</code> we have the admin interface, that is built for the content managers (and other managers), but is used by everyone. Why not to have
-such a "developer interface" that hopefully some time will be usable by other people?</p>
-</div>
+such a "developer interface" that hopefully some time will be usable by other people?</p></div>
             
         </div>
 
