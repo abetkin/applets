@@ -194,7 +194,7 @@ I can use parameters
 </code></pre>
 <p>Now <code>Child</code> can access parent attributes from the context.</p>
 <p>Notice that the child's method is also decorated with <code>g.method</code>. That is because <code>g.method</code> works more complex than <code>add_context</code>:
-it sets the last added element as pending, and it will be missing from <code>get_context()</code> until the next entering in a context modifying 
+it sets the last added element as pending, that will be missing from <code>get_context()</code> until the next entering in a context modifying 
 manager.</p>
 <p>This is done to prevent the namespace pollution: it wouldn't be great if an object could access it's own attributes
 from the context. In that case you won't be able to write things like</p>
