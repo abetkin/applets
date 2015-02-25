@@ -1,0 +1,12 @@
+site_name: gcontext
+site_url: http://abetkin.github.io/gcontext/
+site_description: The global context in use.
+site_dir: /home/vitalii/Documents/site
+
+repo_url: https://github.com/abetkin/gcontext
+
+
+pages:
+- ['index.md', 'Home']
+- ['examples.md', 'Examples']
+
