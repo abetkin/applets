@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+ <rss version="2.0">
+ <channel>
+ <title>Blog of Abetkin Vitalii</title>
+ <link>https://github.com/abetkin</link>
+ <description></description>
+<item>
+     <title>Threadlocals for web development</title>
+     <link>https://github.com/abetkin/gcontext</link>
+     <description>A small package from a django user</description>
+     <guid isPermaLink="true">http://abetkin.github.io/gcontext/</guid> 
+ </item>
+
+ </channel>
+ </rss>
