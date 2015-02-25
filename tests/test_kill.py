@@ -40,3 +40,14 @@ class C(A):
 o = C()
 res = o.run()
 case.assertEqual(res, 4)
+
+####
+
+from gcontext.hooks import exit_before, exit_after
+
+with exit_after(A.run) as ex:
+    o = A()
+    res = o.run()
+
+
+case.assertEqual(ex.ret, 4)
