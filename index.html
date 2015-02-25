@@ -113,7 +113,7 @@
         
             <li><a href="#examples">Examples</a></li>
         
-            <li><a href="#benefits-for-the-interactivity">Benefits for the interactivity</a></li>
+            <li><a href="#new-possibilities-for-interacting-from-shell-and-testing">New possibilities for interacting from shell and testing</a></li>
         
             <li><a href="#the-context-isolation">The context isolation</a></li>
         
@@ -279,9 +279,9 @@ That is the interface I would like to see for serialization: the two classmethod
 <p>There is a <a href="examples/#django-filters-enhanced">continuation</a>  to this in the Examples section:
 there you can find similar classes for filter declaration and the implementation of similar classmethods.</p>
 <hr />
-<h2 id="benefits-for-the-interactivity">Benefits for the interactivity</h2>
+<h2 id="new-possibilities-for-interacting-from-shell-and-testing">New possibilities for interacting from shell and testing</h2>
 <p>Being able to provide context to methods makes possible using from the interactive shell objects that
-you couldn't before. You are not required to depend on the request object:</p>
+you couldn't before. For example, you are not required to depend on the request object:</p>
 <pre><code>class Aclass:
     request = g.ContextAttr('request', None)
 
@@ -298,11 +298,10 @@ you couldn't before. You are not required to depend on the request object:</p>
 
 </code></pre>
 
-<p>This can make the testing easier, because it allows running the units isolated
+<p>This also can make the testing easier, because it allows running code units isolated
 from each other.</p>
-<p><strong>Note:</strong> The global context should be used with caution, without too much enthusiasm.
-If abused, it can make your code, inversely, hardly testable.
-The usual precautions for using global variables apply.</p>
+<p>Remember it's a mixed blessing though. If abused, it can make your code, inversely, hardly testable,
+that will show unreproducible behaviour. The usual precautions for using global variables apply.</p>
 <hr />
 <h2 id="the-context-isolation">The context isolation</h2>
 <p>Though context modifying managers should guarantee the proper context cleanup even in case of errors,
