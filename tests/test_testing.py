@@ -24,11 +24,32 @@ class T(TestCase):
 
         @self.stop_before(B.walk, 'walking')
         def f(obj):
-            self.assertFalse(obj.__b__)
+            pass
 
         @self.stop_after(A.run, 'running A')
         def g(a, ret):
-            self.assertNotEqual(ret, 4)
+            self.assertEqual(ret, 4)
 
         o = A()
         self.assertEqual(o.run(), 4)
+
+# subTest example #
+
+from subtest import TestCase, subtest
+import gcontext as g
+
+class TC(TestCase):
+
+    def test(self):
+
+        with subtest('AAA'):
+            with subtest('BBB'):
+                self.assertFalse(0)
+        func()
+
+def case():
+    return g.get_context()['testcase']
+
+@subtest('description')
+def func():
+    case().assertTrue(1)
