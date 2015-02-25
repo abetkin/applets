@@ -9,9 +9,9 @@ from .hooks import pre_hook, post_hook, Hook
 
 
 def ContextAttr(name, default=Missing):
-    dic = {}
 
     def fget(self):
+        dic = self.__dict__.setdefault('_contextattrs', {})
         context = get_context()
         if name in dic:
             return dic[name]
@@ -23,6 +23,7 @@ def ContextAttr(name, default=Missing):
             raise AttributeError(name)
 
     def fset(self, value):
+        dic = self.__dict__.setdefault('_contextattrs', {})
         dic[name] = value
 
     return property(fget, fset)
