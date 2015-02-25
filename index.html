@@ -165,18 +165,14 @@ sense that it is global to a thread, being actually a threadlocal. Now, that obj
 a mapping: an attribute is looked up in the objects stack sequentially starting from it's top.</p>
 <p>That object will be called the context and can be retrieved with <code>gcontext.get_context()</code></p>
 <p>The objects are pushed and popped from the stack with the help of context managers,
-of which the simplest is <code>add_context</code>: it just pushes objects in the context for the time of execution
-of the decorated callable:</p>
+of which the simplest is <code>add_context</code>:</p>
 <pre><code>import gcontext as g
 
-@g.add_context({'name': 'John'})
-def hello():
+with g.add_context({'name': 'John'})
     print('Hello, %s' % g.get_context()['name'])
-
-&gt;&gt;&gt; hello()
-Hello, John
 </code></pre>
 <p>The package also provides decorators for callables (methods in the most typical case)
+that wrap similar context manager
 that can push into the context their arguments (usually we are interested in the bound instance: the first positional argument).
 These decorators are instances of <code>GrabContextWrapper</code> and use internally the
 context manager similar to <code>add_context</code>. Let's see the <code>method</code> decorator in action:</p>
@@ -189,26 +185,6 @@ context manager similar to <code>add_context</code>. Let's see the <code>method<
         return Child().will_do_this()
 
 class Child:
-    def will_do_this(self):
-        print('I can use %s' % g.get_context()['params'])
-</code></pre>
-<p>Now <code>Child</code> can access parent attributes from the context. <code>Parent</code> instances, however,
-also see in the context their own attributes. It's not very
-good: it's an unneeded namespace pollution. That's why in <code>gcontext</code> there exists the notion of
-<strong>parent context</strong>. The logic behind it is simple: the last added element
-remains pending until the next entering in such context manager.</p>
-<p>Actually, the parent context is what you get with <code>get_context</code>. The raw context can be retrieved
-with <code>g._raw_context()</code>.
-So, the code above will not
-work:</p>
-<pre><code class="python">&gt;&gt;&gt; Parent('some data'}).do_smth()
-Key Error: 'params'
-</code></pre>
-
-<p>That's because <code>will_do_this</code> is on the the same context "nesting level" as <code>do_smth</code>.
-Let's make the child method execute in the child context:</p>
-<pre><code>class Child:
-
     @g.method
     def will_do_this(self):
         print('I can use %s' % g.get_context()['params'])
@@ -216,15 +192,20 @@ Let's make the child method execute in the child context:</p>
 &gt;&gt;&gt; Parent('parameters'}).do_smth()
 I can use parameters
 </code></pre>
-<p>The context namespace doesn't get polluted, so you can safely write:</p>
+<p>Now <code>Child</code> can access parent attributes from the context.</p>
+<p>Notice that the child's method is also decorated with <code>g.method</code>. That is because <code>g.method</code> works more complex than <code>add_context</code>:
+it sets the last added element as pending, and it will be missing from <code>get_context()</code> until the next entering in a context modifying 
+manager.</p>
+<p>This is done to prevent the namespace pollution: it wouldn't be great if an object could access it's own attributes
+from the context. In that case you won't be able to write things like</p>
 <pre><code>class Child:
     @property
     def params(self):
         return g.get_context()['params'])
 </code></pre>
-<p>Though <code>params</code> property accesses the <code>params</code> attribute from context, you don't get the "recursion depth exceeded" error.
-Actually, the package provides a
-convenience function for this - <code>ContextAttr</code>, that returns a property:</p>
+<p>You would get "recursion depth exceeded" error: <code>params</code> attribute will be accessed in cycle. In current implementation it is safe.
+Actually, there is a
+convenience function for such things - <code>ContextAttr</code>, that returns a property:</p>
 <pre><code class="python">params = g.ContextAttr('params')
 </code></pre>
 
