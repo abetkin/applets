@@ -3,10 +3,6 @@ import codecs
 import os
 import re
 
-
-with codecs.open('README.md', encoding='utf-8') as f:
-    long_description = f.read()
-
 setup(
     name="gcontext",
 
@@ -14,8 +10,8 @@ setup(
     # see http://packaging.python.org/en/latest/tutorial.html#version
     version='0.1',
 
-    description="gcontext",
-    long_description=long_description,
+    description="The global context in use.",
+    long_description= "The global context in use.",
 
     # The project URL.
     url='https://github.com/abetkin/gcontext',
@@ -39,7 +35,6 @@ setup(
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
     ],
@@ -50,4 +45,6 @@ setup(
 
     # List run-time dependencies here.  These will be installed by pip when your
     # project is installed.
+    install_requires = ['greenlet'],
+    keywords='global context threadlocal',
 )
