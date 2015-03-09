@@ -149,6 +149,8 @@ class GrabContextWrapper:
             context.pop()
         context.pending = was_pending
 
+    # class as_manager ?
+
 
     def __call__(self, func):
         @wraps(func)
@@ -175,6 +177,8 @@ class GrabContextWrapper:
 
         return wrapper
 
+
+# define pre-post hooks with generator
 
 @GrabContextWrapper
 def function(*args, **kwargs):
