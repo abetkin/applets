@@ -149,9 +149,6 @@ class GrabContextWrapper:
             context.pop()
         context.pending = was_pending
 
-    # class as_manager ?
-
-
     def __call__(self, func):
         @wraps(func)
         def wrapper(*args, **kwargs):

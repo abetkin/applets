@@ -155,17 +155,6 @@ class CriticalHook(Hook):
         if exc and issubclass(exc[0], Exit):
             return True
 
-# ctx snapshot to error
-# Error(ctx) from e
-# with тот же самый контекст
-# --
-
-# DEBUG mode
-
-# log & check
-
-
-
 
 class exit_before(CriticalHook):
 
