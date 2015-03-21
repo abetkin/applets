@@ -7,3 +7,9 @@ web debug toolbar:
 - testcase
 - inject into ns (ChainMap)
 - exc_info
+
+
+### ways to reproduce context
+ctx <-> script
+
+named scripts

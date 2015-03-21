@@ -1,3 +1,5 @@
+from collections import ChainMap
+
 import IPython
 from IPython.core.magic import Magics, magics_class, line_magic
 
@@ -11,12 +13,17 @@ def unload_ipython_extension(ipython): pass
     # If you want your extension to be unloadable, put that logic here.
 
 
+additional_ctx = {
+    'myglobal': int,
+}
+
 @magics_class
 class ExtraContextMagics(Magics):
 
     @line_magic
     def use(self, context_var):
         user_ns = self.shell.user_ns
+        self.shell.user_ns = ChainMap(user_ns, additional_ctx)
 
     @line_magic
     def inject(self, callabl):
