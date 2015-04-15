@@ -1,0 +1,35 @@
+====== Use case: interactive =======
+
+with stop_before(func) as e:
+    cl.post('/url')
+
+##
+%%stop_before func
+
+scenario
+##
+
+vars got injected
+
+
+@post_hook(func)
+def log_func(*args):
+    # logging...
+
+hooks as class ?
+
+
+=== Use case: test =======
+
+class Case:
+
+    def setUp(self):
+        with stop_before(func) as e:
+            cl.post('/url')
+        self.ctx = e.ctx
+
+##################
+
+functions, patches = bpts
+
+get_inst(MyClass)
