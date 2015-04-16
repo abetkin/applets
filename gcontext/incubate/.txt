@@ -16,7 +16,25 @@ vars got injected
 def log_func(*args):
     # logging...
 
+=============
+
 hooks as class ?
+discovered
+
+class Hook(ReadOnly):
+    func = SomeClass.ctx_mod_func
+    
+    def log_pretty(self):
+        1
+    
+    def cond(self):
+        1
+    
+    def post(self):
+        1
+    
+    def pre(self):
+        1
 
 
 === Use case: test =======
@@ -33,3 +51,5 @@ class Case:
 functions, patches = bpts
 
 get_inst(MyClass)
+
+
