@@ -21,8 +21,10 @@ additional_ctx = {
 class ExtraContextMagics(Magics):
 
     @cell_magic
-    def use(self, context_var):
+    def use(self, line, cell):
+        opts = line
         user_ns = self.shell.user_ns
+        self.shell.run_cell(cell)
         self.shell.user_ns = ChainMap(user_ns, additional_ctx)
 
     # @line_magic
