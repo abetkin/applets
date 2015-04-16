@@ -6,7 +6,7 @@ from copy import copy
 
 from .util import Missing, ExplicitNone, threadlocal
 from .hooks import pre_hook, post_hook, Hook
-
+from .exceptions import Exit
 
 def ContextAttr(name, default=Missing):
 
@@ -37,7 +37,10 @@ def add_context(*objects):
         if context.push(obj):
             added += 1
     context.pending = False
-    yield
+    try:
+        yield
+    except Exit:
+        return
     for i in range(added):
         context.pop()
 
@@ -144,7 +147,10 @@ class GrabContextWrapper:
         instance = self.get_context_object(*run_args, **run_kwargs)
         added = context.push(instance) # whether was added successfully
         context.pending = added
-        yield
+        try:
+            yield
+        except Exit:
+            return # ?
         if added:
             context.pop()
         context.pending = was_pending
