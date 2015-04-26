@@ -2,10 +2,22 @@
 	"folders":
 	[
 		{
+			"file_exclude_patterns":
+			[
+				"*.pyc",
+				"*.sublime-workspace"
+			],
+			"folder_exclude_patterns":
+			[
+				".*",
+				"__pycache__"
+			],
 			"follow_symlinks": true,
-			"path": ".",
-            "file_exclude_patterns": ["*.pyc", "*.sublime-workspace"],
-            "folder_exclude_patterns": [".*", "__pycache__"],
+			"path": "."
 		}
-	]
+	],
+	"settings":
+	{
+		"python_interpreter": "/usr/bin/python3"
+	}
 }

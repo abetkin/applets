@@ -1,0 +1,6 @@
+Global ctx:
+
+    - global objects, maybe tagged: 'SomeInterface'
+        {Serializer type -> ser} # ! abc is possible
+
+    - attr lookup

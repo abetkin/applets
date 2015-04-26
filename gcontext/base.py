@@ -29,20 +29,20 @@ def ContextAttr(name, default=Missing):
     return property(fget, fset)
 
 
+
+
+
 @contextmanager
-def add_context(*objects):
-    added = 0
-    context = _raw_context()
-    for obj in objects:
-        if context.push(obj):
-            added += 1
-    context.pending = False
+def add_context(obj):
+    context = get_context()
+    pushed = context.push(obj)
     try:
         yield
-    except Exit:
-        return
-    for i in range(added):
-        context.pop()
+    except Exception as ex:
+        ex.gctx = copy(context)
+        raise ex
+    finally:
+        if pushed: context.pop()
 
 
 @Mapping.register
@@ -114,25 +114,31 @@ class ObjectsStack:
         self._objects.pop(0)
 
 
-class PendingObjectContext(ObjectsStack):
+# class PendingObjectContext(ObjectsStack):
 
-    pending = False
+#     pending = False
 
-    @property
-    def parent(self):
-        if not self.pending:
-            return self
-        objects = islice(self.objects, 1, None)
-        return self.__class__(tuple(objects))
+#     @property
+#     def parent(self):
+#         if not self.pending:
+#             return self
+#         objects = islice(self.objects, 1, None)
+#         return self.__class__(tuple(objects))
 
-def _raw_context():
-    return threadlocal().setdefault('context', PendingObjectContext())
+def get_context(obj=None):
+    # Usually to be called from objects as properties
+    #
+    context = threadlocal().setdefault('context', ObjectsStack())
+    if obj is context.objects[-1]:
+        tple = tuple(islice(context.objects, 1, None))
+        return ObjectsStack(tple)
+    return copy(context.objects)
 
-def get_context():
-    '''
-    Return parent context.
-    '''
-    return _raw_context().parent
+# def get_context():
+#     '''
+#     Return parent context.
+#     '''
+#     return _raw_context().parent
 
 
 class GrabContextWrapper:
@@ -140,20 +146,9 @@ class GrabContextWrapper:
     def __init__(self, get_context_object):
         self.get_context_object = get_context_object
 
-    @contextmanager
     def as_manager(self, *run_args, **run_kwargs):
-        context = _raw_context()
-        was_pending = context.pending
         instance = self.get_context_object(*run_args, **run_kwargs)
-        added = context.push(instance) # whether was added successfully
-        context.pending = added
-        try:
-            yield
-        except Exit:
-            return # ?
-        if added:
-            context.pop()
-        context.pending = was_pending
+        return add_context(instance)
 
     def __call__(self, func):
         @wraps(func)

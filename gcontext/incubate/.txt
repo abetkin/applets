@@ -23,16 +23,16 @@ discovered
 
 class Hook(ReadOnly):
     func = SomeClass.ctx_mod_func
-    
+
     def log_pretty(self):
         1
-    
+
     def cond(self):
         1
-    
+
     def post(self):
         1
-    
+
     def pre(self):
         1
 
@@ -53,3 +53,4 @@ functions, patches = bpts
 get_inst(MyClass)
 
 
+events

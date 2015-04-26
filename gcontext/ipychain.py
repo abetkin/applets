@@ -9,10 +9,6 @@ def load_ipython_extension(ip):
     # ip.events.register('pre_run_cell', auto_reload.pre_run_cell)
     # ip.events.register('post_execute', auto_reload.post_execute_hook)
 
-def unload_ipython_extension(ipython): pass
-    # If you want your extension to be unloadable, put that logic here.
-
-
 additional_ctx = {
     'myglobal': int,
 }
