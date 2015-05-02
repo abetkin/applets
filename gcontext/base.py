@@ -8,6 +8,9 @@ from .util import Missing, ExplicitNone, threadlocal
 from .hooks import pre_hook, post_hook, Hook
 from .exceptions import Exit
 
+
+# TODO property to handle "pending" object in context
+#
 def ContextAttr(name, default=Missing):
 
     def fget(self):

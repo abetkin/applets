@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="91dc42a4-753e-4d72-a05e-3d19730f7019" kpf_version="5" name="gcontext.komodoproject">
+<preference-set idref="91dc42a4-753e-4d72-a05e-3d19730f7019" id="project" preftype="project">
+  <string relative="path" id="import_dirname"></string>
+  <string id="jshint_linter_chooser">default</string>
+  <string id="jslint_linter_chooser">default</string>
+  <string id="last_local_directory">None</string>
+  <string id="last_remote_directory">None</string>
+  <string id="lessDefaultInterpreter">None</string>
+  <long id="prefs_version">1</long>
+  <string id="python3DefaultInterpreter">/usr/bin/python3</string>
+  <string id="pythonDefaultInterpreter">/home/vitalii/.virtualenvs/py3/bin/python</string>
+  <string id="sassDefaultInterpreter">None</string>
+  <string id="scssDefaultInterpreter">None</string>
+</preference-set>
+</project>
