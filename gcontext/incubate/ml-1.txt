@@ -18,3 +18,4 @@ scenario
 
 1 manager
 remove parent ctx
+events

@@ -153,6 +153,25 @@ class GrabContextWrapper:
         instance = self.get_context_object(*run_args, **run_kwargs)
         return add_context(instance)
 
+    '''
+    
+    def __init__(self):
+        self.get_context_object = get_context_object
+        
+    
+    def __call__(self, func):
+        signal = make_signal(func)
+    
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            with self.as_manager(*args, **kwargs):
+                PreExecute.emit(*args, **kwargs)
+                ret = func(*args, **kwargs)
+                PostExecute.emit(*args, **kwargs)
+                return ret
+                
+    '''
+
     def __call__(self, func):
         @wraps(func)
         def wrapper(*args, **kwargs):
