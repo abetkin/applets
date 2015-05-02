@@ -144,6 +144,11 @@ def get_context(obj=None):
 #     return _raw_context().parent
 
 
+from blinker import signal
+
+
+# tlocal ctx -> Namespace
+
 class GrabContextWrapper:
 
     def __init__(self, get_context_object):
@@ -153,11 +158,6 @@ class GrabContextWrapper:
         instance = self.get_context_object(*run_args, **run_kwargs)
         return add_context(instance)
 
-    '''
-    
-    def __init__(self):
-        self.get_context_object = get_context_object
-        
     
     def __call__(self, func):
         signal = make_signal(func)
@@ -165,13 +165,13 @@ class GrabContextWrapper:
         @wraps(func)
         def wrapper(*args, **kwargs):
             with self.as_manager(*args, **kwargs):
-                PreExecute.emit(*args, **kwargs)
+                PreExecute.emit(func, *args, **kwargs)
                 ret = func(*args, **kwargs)
-                PostExecute.emit(*args, **kwargs)
+                PostExecute.emit(func, *args, **kwargs)
                 return ret
-                
-    '''
 
+
+    '''
     def __call__(self, func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -196,7 +196,7 @@ class GrabContextWrapper:
                 return result
 
         return wrapper
-
+    '''
 
 # define pre-post hooks with generator
 
