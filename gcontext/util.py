@@ -1,4 +1,5 @@
 import greenlet
+from functools import wraps
 
 threadlocal = greenlet.getcurrent()
 
@@ -11,3 +12,15 @@ class Missing:
 
 class ExplicitNone:
     pass
+
+
+def lazyattr(name):
+    def decorator(method):
+        @wraps(method)
+        def getter(self, *args, **kwargs):
+            if not hasattr(self, name):
+                setattr(self, name, method(self, *args, **kwargs))
+            return getattr(self, name)
+        return property(getter)
+    return decorator
+
