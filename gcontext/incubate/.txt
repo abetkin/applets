@@ -53,4 +53,7 @@ functions, patches = bpts
 get_inst(MyClass)
 
 
-events
+log _events_ (weakref)
+
+
+event - ?

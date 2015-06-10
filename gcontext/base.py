@@ -149,6 +149,15 @@ from blinker import signal
 
 # tlocal ctx -> Namespace
 
+class MySignal: # <-> func (func = name ?)
+    
+    def __init__(self, func):
+        #
+        self.pre_signal = Signal()
+        self.post_signal = Signal()
+        
+
+
 class GrabContextWrapper:
 
     def __init__(self, get_context_object):
@@ -160,7 +169,7 @@ class GrabContextWrapper:
 
     
     def __call__(self, func):
-        signal = make_signal(func)
+        signal = MySignal(func)
     
         @wraps(func)
         def wrapper(*args, **kwargs):
