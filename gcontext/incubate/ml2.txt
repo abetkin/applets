@@ -1,4 +1,0 @@
-
--
-smart logging (logging and shell integration)
--

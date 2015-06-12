@@ -6,7 +6,8 @@ from copy import copy
 
 from .util import Missing, ExplicitNone, threadlocal
 from ._signals import pre_signal, post_signal
-# from .exceptions import Exit
+
+from .core import Context
 
 
 # TODO property to handle "pending" object in context
@@ -36,98 +37,31 @@ def ContextAttr(name, default=Missing):
 
 
 @contextmanager
-def add_context(obj):
+def add_context(mapping):
     context = get_context()
-    pushed = context.push(obj)
+    # TODO if empty - replace
+    context.maps.insert(0, mapping)
     try:
         yield
     except Exception as ex:
         ex.gctx = copy(context)
         raise ex
     finally:
-        if pushed: context.pop()
+        del context.maps[0]
 
 
-# context: stack -> dict, ChainMap ?
+# g.ex
 
-@Mapping.register
-class ObjectsStack:
-    def __init__(self, objects=None):
-        self._objects = objects or []
-
-    @property
-    def objects(self):
-        return self._objects
-
-    def __copy__(self):
-        return self.__class__(self.objects)
-
-    def __repr__(self):
-        return repr(self.objects)
-
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            # a bit of user-friendly interface
-            return self.objects[key]
-        for obj in self.objects:
-            try:
-                if isinstance(obj, Mapping):
-                    return obj[key]
-                return getattr(obj, key)
-            except (KeyError, AttributeError):
-                pass
-        raise KeyError(key)
-
-    def __setitem__(self, key, value):
-        raise NotImplementedError()
-
-    def __delitem__(self, key):
-        raise NotImplementedError()
-
-    def __bool__(self):
-        return bool(self.objects)
-
-    def get(self, key, default=None):
-        return self[key] if key in self else default
-
-    def __contains__(self, key):
-        try:
-            self[key]
-            return True
-        except KeyError:
-            pass
-
-    def __iter__(self):
-        yield from self.objects
-
-    def __len__(self):
-        return len(self.objects)
-
-    def __eq__(self, other):
-        if isinstance(other, ObjectsStack):
-            return self.objects == other.objects
-
-    def __ne__(self, other):
-        return not (self == other)
-
-    def push(self, obj):
-        if obj is not None and obj not in self._objects:
-            self._objects.insert(0, obj)
-            return True
-
-    def pop(self):
-        self._objects.pop(0)
+class Ex:
+    pass
 
 
 
-def get_context(obj=None):
+def get_context():
     # Usually to be called from objects as properties
     #
-    context = threadlocal().setdefault('context', ObjectsStack())
-    if obj is not None and obj is context.objects[-1]:
-        tple = tuple(islice(context.objects, 1, None))
-        return ObjectsStack(tple)
-    return copy(context)
+    context = threadlocal().setdefault('context', Context())
+    return context
 
 
 
@@ -136,7 +70,7 @@ from blinker import signal
 
 
 
-class GrabContextWrapper:
+class ContextGrabber:
 
     def __init__(self, get_context_object):
         self.get_context_object = get_context_object
@@ -147,8 +81,6 @@ class GrabContextWrapper:
 
     
     def __call__(self, func):
-
-    
         @wraps(func)
         def wrapper(*args, **kwargs):
             with self.as_manager(*args, **kwargs):
@@ -164,12 +96,9 @@ class GrabContextWrapper:
         return wrapper
 
 
-# define pre-post hooks with generator
 
-@GrabContextWrapper
-def function(*args, **kwargs):
-    return None
-
-@GrabContextWrapper
-def method(*args, **kwargs):
-    return args[0]
+def grab_instance(name):
+    @ContextGrabber
+    def grabber(*args, **kwargs):
+        return {name: args[0]}
+    return grabber
