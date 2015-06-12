@@ -5,8 +5,8 @@ from collections import Mapping
 from copy import copy
 
 from .util import Missing, ExplicitNone, threadlocal
-from .hooks import pre_hook, post_hook, Hook
-from .exceptions import Exit
+from ._signals import pre_signal, post_signal
+# from .exceptions import Exit
 
 
 # TODO property to handle "pending" object in context
@@ -47,6 +47,8 @@ def add_context(obj):
     finally:
         if pushed: context.pop()
 
+
+# context: stack -> dict, ChainMap ?
 
 @Mapping.register
 class ObjectsStack:
@@ -117,45 +119,21 @@ class ObjectsStack:
         self._objects.pop(0)
 
 
-# class PendingObjectContext(ObjectsStack):
-
-#     pending = False
-
-#     @property
-#     def parent(self):
-#         if not self.pending:
-#             return self
-#         objects = islice(self.objects, 1, None)
-#         return self.__class__(tuple(objects))
 
 def get_context(obj=None):
     # Usually to be called from objects as properties
     #
     context = threadlocal().setdefault('context', ObjectsStack())
-    if obj is context.objects[-1]:
+    if obj is not None and obj is context.objects[-1]:
         tple = tuple(islice(context.objects, 1, None))
         return ObjectsStack(tple)
-    return copy(context.objects)
+    return copy(context)
 
-# def get_context():
-#     '''
-#     Return parent context.
-#     '''
-#     return _raw_context().parent
 
 
 from blinker import signal
 
 
-# tlocal ctx -> Namespace
-
-class MySignal: # <-> func (func = name ?)
-    
-    def __init__(self, func):
-        #
-        self.pre_signal = Signal()
-        self.post_signal = Signal()
-        
 
 
 class GrabContextWrapper:
@@ -169,43 +147,22 @@ class GrabContextWrapper:
 
     
     def __call__(self, func):
-        signal = MySignal(func)
+
     
         @wraps(func)
         def wrapper(*args, **kwargs):
             with self.as_manager(*args, **kwargs):
-                PreExecute.emit(func, *args, **kwargs)
+                # TODO try..except
+                pre_exec.send(args=args, kwargs=kwargs)
                 ret = func(*args, **kwargs)
-                PostExecute.emit(func, *args, **kwargs)
+                post_exec.send(args=args, kwargs=kwargs)
                 return ret
 
-
-    '''
-    def __call__(self, func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            with self.as_manager(*args, **kwargs):
-                result = None
-                hook = Hook.lookup((pre_hook, wrapper))
-                if hook:
-                    result = hook.execute(*args, **kwargs)
-                if result is None:
-                    # * wrapped function *
-                    result = func(*args, **kwargs)
-                    # * * * * *  * * * * *
-                elif result is ExplicitNone:
-                    result = None
-                hook = Hook.lookup((post_hook, wrapper))
-                if hook:
-                    ret = hook.execute(*args, ret=result, **kwargs)
-                    if ret is ExplicitNone:
-                        result = None
-                    elif ret is not None:
-                        result = ret
-                return result
+        pre_exec = pre_signal(wrapper)
+        post_exec = post_signal(wrapper)
 
         return wrapper
-    '''
+
 
 # define pre-post hooks with generator
 
