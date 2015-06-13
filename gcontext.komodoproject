@@ -2,16 +2,67 @@
 <!-- Komodo Project File - DO NOT EDIT -->
 <project id="91dc42a4-753e-4d72-a05e-3d19730f7019" kpf_version="5" name="gcontext.komodoproject">
 <preference-set idref="91dc42a4-753e-4d72-a05e-3d19730f7019" id="project" preftype="project">
+  <boolean id="editUseLinting">1</boolean>
   <string relative="path" id="import_dirname"></string>
+  <string id="jshintOptions"></string>
   <string id="jshint_linter_chooser">default</string>
+  <string id="jshint_linter_specific"></string>
+  <string id="jslintOptions"></string>
   <string id="jslint_linter_chooser">default</string>
+  <string id="jslint_linter_specific"></string>
   <string id="last_local_directory">None</string>
   <string id="last_remote_directory">None</string>
   <string id="lessDefaultInterpreter">None</string>
+  <string id="lessLinterType">path</string>
+  <boolean id="lintClearOnTextChange">0</boolean>
+  <long id="lintDelay">1000</long>
+  <boolean id="lintEOLs">1</boolean>
+  <boolean id="lintHTML5Lib">0</boolean>
+  <boolean id="lintHTMLTidy">1</boolean>
+  <boolean id="lintHTML_CheckWith_Perl_HTML_Lint">0</boolean>
+  <boolean id="lintHTML_CheckWith_Perl_HTML_Tidy">0</boolean>
+  <boolean id="lintJavaScriptEnableStrict">1</boolean>
+  <boolean id="lintJavaScriptEnableWarnings">1</boolean>
+  <boolean id="lintJavaScript_SpiderMonkey">1</boolean>
+  <boolean id="lintWithJSHint">0</boolean>
+  <boolean id="lintWithJSLint">0</boolean>
+  <boolean id="lint_coffee_script">1</boolean>
+  <boolean id="lint_python3_with_pep83">0</boolean>
+  <boolean id="lint_python3_with_pychecker3">0</boolean>
+  <boolean id="lint_python3_with_pyflakes3">0</boolean>
+  <boolean id="lint_python3_with_pylint3">0</boolean>
+  <boolean id="lint_python3_with_standard_python">1</boolean>
+  <boolean id="lint_python_with_pep8">0</boolean>
+  <boolean id="lint_python_with_pychecker">0</boolean>
+  <boolean id="lint_python_with_pyflakes">1</boolean>
+  <boolean id="lint_python_with_pylint">0</boolean>
+  <boolean id="lint_python_with_standard_python">1</boolean>
+  <string id="pep83_checking_rcfile"></string>
+  <string id="pep8_checking_rcfile"></string>
+  <string id="perl_lintOption">cw</string>
+  <boolean id="perl_lintOption_disableBeginBlocks">1</boolean>
+  <boolean id="perl_lintOption_includeCurrentDirForLinter">1</boolean>
+  <string id="perl_lintOption_perlCriticLevel">off</string>
+  <string id="perlcritic_checking_rcfile"></string>
   <long id="prefs_version">1</long>
-  <string id="python3DefaultInterpreter">/usr/bin/python3</string>
-  <string id="pythonDefaultInterpreter">/home/vitalii/.virtualenvs/py3/bin/python</string>
+  <string id="pychecker3_checking_rcfile"></string>
+  <string id="pychecker3_wrapper_location"></string>
+  <string id="pychecker_checking_rcfile"></string>
+  <string id="pychecker_wrapper_location"></string>
+  <string id="pylint3_checking_rcfile"></string>
+  <string id="pylint_checking_rcfile"></string>
+  <string id="python3DefaultInterpreter">/home/vitalii/.virtualenvs/p3/bin/python</string>
+  <string id="python3ExtraPaths">/usr/local/lib/python3.4/dist-packages</string>
+  <string id="pythonDefaultInterpreter">/home/vitalii/.virtualenvs/p3/bin/python</string>
+  <string id="pythonExtraPaths">/home/vitalii/.virtualenvs/p3/lib/python3.4/site-packages</string>
+  <string id="ruby_lintOption">cwT</string>
   <string id="sassDefaultInterpreter">None</string>
+  <string id="sassLinterType">path</string>
   <string id="scssDefaultInterpreter">None</string>
+  <string id="scssLinterType">path</string>
+  <string id="tidy_accessibility">0</string>
+  <string id="tidy_configpath"></string>
+  <string id="tidy_errorlevel">errors</string>
+  <string id="userEnvironmentStartupOverride"></string>
 </preference-set>
 </project>

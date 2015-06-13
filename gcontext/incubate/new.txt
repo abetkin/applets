@@ -4,3 +4,13 @@ with exit: ...
 ipython
 
 Context
+
+
+class A:
+    
+    @grabctx(_.self)
+    def do_stuff(self):
+        1
+    
+    myattr = g.ContextAttr('parent.attr',
+                           exclude=do_stuff.grabber)

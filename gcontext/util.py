@@ -1,6 +1,8 @@
 import greenlet
 from functools import wraps
 
+import collections
+
 threadlocal = greenlet.getcurrent()
 
 def threadlocal():
@@ -24,3 +26,14 @@ def lazyattr(name):
         return property(getter)
     return decorator
 
+
+def get_attribute(obj, dotted_attr):
+    attrs = dotted_attr.split('.')
+    for attr in attrs:
+        if obj is None:
+            return None
+        try:
+            if isinstance(obj, collections.Mapping):
+                obj = obj[attr]
+            else:
+                obj = getattr(obj, attr)

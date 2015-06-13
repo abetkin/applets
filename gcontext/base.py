@@ -10,28 +10,26 @@ from ._signals import pre_signal, post_signal
 from .core import Context
 
 
-# TODO property to handle "pending" object in context
+# def ContextAttr(name, default=Missing):
 #
-def ContextAttr(name, default=Missing):
-
-    def fget(self):
-        dic = self.__dict__.setdefault('_contextattrs', {})
-        context = get_context()
-        if name in dic:
-            return dic[name]
-        if default is not Missing:
-            return context.get(name, default)
-        try:
-            return context[name]
-        except KeyError:
-            raise AttributeError(name)
-
-    def fset(self, value):
-        dic = self.__dict__.setdefault('_contextattrs', {})
-        dic[name] = value
-
-    return property(fget, fset)
-
+#     def fget(self):
+#         dic = self.__dict__.setdefault('_contextattrs', {})
+#         context = get_context()
+#         if name in dic:
+#             return dic[name]
+#         if default is not Missing:
+#             return context.get(name, default)
+#         try:
+#             return context[name]
+#         except KeyError:
+#             raise AttributeError(name)
+#
+#     def fset(self, value):
+#         dic = self.__dict__.setdefault('_contextattrs', {})
+#         dic[name] = value
+#
+#     return property(fget, fset)
+#
 
 
 
@@ -94,6 +92,12 @@ class ContextGrabber:
         post_exec = post_signal(wrapper)
 
         return wrapper
+
+
+class grabctx:
+
+    def __init__(*args, **kwargs):
+        1
 
 
 
