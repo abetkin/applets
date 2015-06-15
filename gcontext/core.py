@@ -4,6 +4,8 @@ from collections import ChainMap
 import operator as op
 from functools import reduce
 
+import sys
+
 class Context(ChainMap):
 
     def __missing__(self):
@@ -12,15 +14,16 @@ class Context(ChainMap):
 
 
 class GrabbedContext(dict):
+    # immutable ?
 
     def __init__(self, *args, _grabber_=None, **kwargs):
         self._grabber_ = _grabber_
         super().__init__(*args, **kwargs)
 
-    def __hash__(self, ):
-        ret = reduce(op.add, [hash(k) for k in self])
-        ret += hash(self._identity_)
-        return ret
+    # def __hash__(self, ):
+    #     ret = reduce(op.add, [hash(k) for k in self])
+    #     ret += hash(self._identity_)
+    #     return ret
 
 
 class Literal(str):

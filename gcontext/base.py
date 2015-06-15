@@ -7,31 +7,30 @@ from copy import copy
 from .util import Missing, ExplicitNone, threadlocal
 from ._signals import pre_signal, post_signal
 
-from .core import Context
+from .core import Context, GrabbedContext
 
 
-# def ContextAttr(name, default=Missing):
+# TODO property to handle "pending" object in context
 #
-#     def fget(self):
-#         dic = self.__dict__.setdefault('_contextattrs', {})
-#         context = get_context()
-#         if name in dic:
-#             return dic[name]
-#         if default is not Missing:
-#             return context.get(name, default)
-#         try:
-#             return context[name]
-#         except KeyError:
-#             raise AttributeError(name)
-#
-#     def fset(self, value):
-#         dic = self.__dict__.setdefault('_contextattrs', {})
-#         dic[name] = value
-#
-#     return property(fget, fset)
-#
+def ContextAttr(name, default=Missing):
 
+    def fget(self):
+        dic = self.__dict__.setdefault('_contextattrs', {})
+        context = get_context()
+        if name in dic:
+            return dic[name]
+        if default is not Missing:
+            return context.get(name, default)
+        try:
+            return context[name]
+        except KeyError:
+            raise AttributeError(name)
 
+    def fset(self, value):
+        dic = self.__dict__.setdefault('_contextattrs', {})
+        dic[name] = value
+
+    return property(fget, fset)
 
 
 @contextmanager
@@ -68,16 +67,54 @@ from blinker import signal
 
 
 
+# class ContextGrabber:
+
+#     def __init__(self, get_context_object):
+#         self.get_context_object = get_context_object
+
+#     def as_manager(self, *run_args, **run_kwargs):
+#         instance = self.get_context_object(*run_args, **run_kwargs)
+#         return add_context(instance)
+
+
+#     def __call__(self, func):
+#         @wraps(func)
+#         def wrapper(*args, **kwargs):
+#             with self.as_manager(*args, **kwargs):
+#                 # TODO try..except
+#                 pre_exec.send(args=args, kwargs=kwargs)
+#                 ret = func(*args, **kwargs)
+#                 post_exec.send(args=args, kwargs=kwargs)
+#                 return ret
+
+#         pre_exec = pre_signal(wrapper)
+#         post_exec = post_signal(wrapper)
+
+#         return wrapper
+
+from inspect import signature
+
 class ContextGrabber:
 
-    def __init__(self, get_context_object):
-        self.get_context_object = get_context_object
+    def __init__(self, *fargs, **fkwargs):
+        self._fargs = fargs
+        self._fkwargs = fkwargs
+
+    def __call__(self, func):
+        self._func = func
+
+
+    def make_context(self, *args, **kwargs):
+        sig = signature(self._func)
+        sig.parameters
+        'a.b.c'
+        return GrabbedContext({})
 
     def as_manager(self, *run_args, **run_kwargs):
         instance = self.get_context_object(*run_args, **run_kwargs)
         return add_context(instance)
 
-    
+
     def __call__(self, func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -92,13 +129,6 @@ class ContextGrabber:
         post_exec = post_signal(wrapper)
 
         return wrapper
-
-
-class grabctx:
-
-    def __init__(*args, **kwargs):
-        1
-
 
 
 def grab_instance(name):
